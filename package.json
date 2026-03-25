@@ -35,7 +35,7 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/adamreynolds-io/zkir-lint.git"
+    "url": "https://github.com/adamreynolds-io/compact-zkir-lint.git"
   },
   "engines": {
     "node": ">=18"
