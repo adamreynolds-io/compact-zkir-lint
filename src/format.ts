@@ -5,6 +5,17 @@
 import { formatDuration, formatEstimateRange } from "./profile.js";
 import type { CircuitReport, ScanSummary } from "./types.js";
 
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes}B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)}KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)}GB`;
+}
+
+function estimatePayloadBytes(k: number): number {
+  return 2 ** k * 48;
+}
+
 export type Format = "text" | "json" | "sarif";
 
 export function formatSummary(summary: ScanSummary, format: Format): string {
@@ -30,24 +41,25 @@ function formatText(summary: ScanSummary): string {
     const warns = report.findings.filter((f) => f.severity === "warn");
     const infos = report.findings.filter((f) => f.severity === "info");
 
-    if (report.findings.length === 0) {
-      lines.push(`  ${report.name} (v${report.version}): clean`);
-      continue;
-    }
+    // Header
+    const statusParts = [];
+    if (errors.length > 0) statusParts.push(`${errors.length} error(s)`);
+    if (warns.length > 0) statusParts.push(`${warns.length} warning(s)`);
+    if (infos.length > 0) statusParts.push(`${infos.length} info(s)`);
+    const status = statusParts.length > 0 ? statusParts.join(", ") : "clean";
 
-    const parts = [];
-    if (errors.length > 0) parts.push(`${errors.length} error(s)`);
-    if (warns.length > 0) parts.push(`${warns.length} warning(s)`);
-    if (infos.length > 0) parts.push(`${infos.length} info(s)`);
+    lines.push(`  ${report.name} (v${report.version}, k=${report.k}): ${status}`);
 
-    lines.push(`  ${report.name} (v${report.version}): ${parts.join(", ")}`);
-
-    // Stats line
+    // Circuit breakdown — always shown
     const s = report.stats;
+    const payload = estimatePayloadBytes(report.k);
     lines.push(
-      `    ${s.totalInstructions} instructions, ${s.numInputs} inputs, ` +
-        `${s.constrainBitsCount} constrain_bits, ${s.condSelectCount} cond_select, ` +
-        `${s.guardedRegions} guarded regions (max depth ${s.maxGuardDepth})`,
+      `    instructions: ${s.totalInstructions}  inputs: ${s.numInputs}  ` +
+        `constrain_bits: ${s.constrainBitsCount}  cond_select: ${s.condSelectCount}`,
+    );
+    lines.push(
+      `    guarded regions: ${s.guardedRegions} (max depth ${s.maxGuardDepth})  ` +
+        `proof payload: ~${formatBytes(payload)}`,
     );
 
     // Profile output
@@ -67,9 +79,7 @@ function formatText(summary: ScanSummary): string {
         } else {
           const [lo, hi] = est.estimatedSeconds;
           const secs = `${Math.round(lo)}s-${Math.round(hi)}s`;
-          const tag =
-            est.verdict === "slow" ? " SLOW" :
-            est.verdict === "ok" ? "" : "";
+          const tag = est.verdict === "slow" ? " SLOW" : "";
           lines.push(`      ${env} ${secs}${tag}`);
         }
       }
@@ -144,7 +154,7 @@ function formatSarif(summary: ScanSummary): string {
     {
       id: "PERF-001",
       shortDescription: {
-        text: "Circuit too large for WASM mobile proving",
+        text: "Circuit exceeds WASM prover limit (k > 15)",
       },
     },
     {

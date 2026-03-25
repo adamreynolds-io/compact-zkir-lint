@@ -38,6 +38,7 @@ export interface CircuitReport {
   file: string;
   name: string;
   version: number;
+  k: number;
   stats: CircuitStats;
   findings: Finding[];
   profile?: CircuitProfile;

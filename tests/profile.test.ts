@@ -8,7 +8,7 @@ import {
   formatEstimateRange,
 } from "../src/profile.js";
 import {
-  wasmMobileLimit,
+  checkWasmKLimit,
   wasmDesktopLimit,
   gpuRequired,
   hashDominatedCircuit,
@@ -117,15 +117,11 @@ describe("PERF rules", () => {
     };
   }
 
-  it("PERF-001 fires when k >= 16", () => {
-    expect(wasmMobileLimit(makeProfile({ k: 15 }))).toHaveLength(0);
-    expect(wasmMobileLimit(makeProfile({ k: 16 }))).toHaveLength(1);
-    expect(wasmMobileLimit(makeProfile({ k: 16 }))[0]!.rule).toBe(
-      "PERF-001",
-    );
-    expect(wasmMobileLimit(makeProfile({ k: 16 }))[0]!.severity).toBe(
-      "error",
-    );
+  it("PERF-001 fires when k > 15 (WASM hard limit)", () => {
+    expect(checkWasmKLimit(15)).toBeNull();
+    expect(checkWasmKLimit(16)).not.toBeNull();
+    expect(checkWasmKLimit(16)!.rule).toBe("PERF-001");
+    expect(checkWasmKLimit(16)!.severity).toBe("warn");
   });
 
   it("PERF-002 fires when k >= 18", () => {

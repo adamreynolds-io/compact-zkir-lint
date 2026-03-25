@@ -6,13 +6,13 @@
 import { readFileSync } from "node:fs";
 import { basename } from "node:path";
 
-import { buildIrGraph, guardDepth } from "./ir.js";
+import { buildIrGraph, estimateK, guardDepth } from "./ir.js";
 import {
   profileCircuit,
   type EnvironmentConfig,
   type ProfileOptions,
 } from "./profile.js";
-import { ALL_PERF_RULES, ALL_RULES } from "./rules.js";
+import { ALL_PERF_RULES, ALL_RULES, checkWasmKLimit } from "./rules.js";
 import type {
   CircuitReport,
   CircuitStats,
@@ -104,6 +104,7 @@ export async function analyzeFile(
       file: filePath,
       name,
       version: parsed.version.major,
+      k: 0,
       stats: {
         totalInstructions: 0,
         numInputs: 0,
@@ -139,10 +140,18 @@ export async function analyzeFile(
     findings.push(...rule(graph));
   }
 
+  // Always compute k and check WASM hard limit
+  const est = estimateK(zkir, options.rowCosts);
+  const wasmFinding = checkWasmKLimit(est.k);
+  if (wasmFinding) {
+    findings.push(wasmFinding);
+  }
+
   const report: CircuitReport = {
     file: filePath,
     name,
     version: zkir.version.major,
+    k: est.k,
     stats,
     findings,
   };
