@@ -1,6 +1,6 @@
 {
   "name": "compact-zkir-lint",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Find Compact circuit bugs before your users do. Detects JS/ZK divergence patterns where compact-runtime succeeds but proof validation fails.",
   "type": "module",
   "bin": {
