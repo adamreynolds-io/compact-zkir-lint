@@ -1,161 +1,145 @@
 # zkir-lint
 
-Static analyzer for [Compact](https://docs.midnight.network/compact) ZKIR files. Detects JS/ZK divergence patterns where `compact-runtime` (JavaScript) succeeds but ZKIR proof validation fails.
+**Your Compact circuit compiled fine. Your tests pass. But the proof server rejects your transaction.**
 
-## Background
-
-The Compact compiler generates both JavaScript (for client-side circuit execution via `compact-runtime`) and ZKIR (for ZK proof generation/validation). These two execution paths can diverge — the JS succeeds but the proof server rejects the proof. This tool statically analyzes compiled `.zkir` files to find known divergence patterns without running any code.
-
-Developed during the investigation of [LFDT-Minokawa/compact#250](https://github.com/LFDT-Minokawa/compact/issues/250) and [#226](https://github.com/LFDT-Minokawa/compact/issues/226).
-
-## Usage
+`zkir-lint` tells you why before your users do.
 
 ```bash
-# Single file
-npx tsx src/cli.ts circuit.zkir
-
-# Recursive scan
-npx tsx src/cli.ts -r contracts/src/artifacts/
-
-# Errors only, quiet summary
-npx tsx src/cli.ts -r . --severity error -q
-
-# SARIF output for CI
-npx tsx src/cli.ts -r . --format sarif > results.sarif
-
-# JSON output
-npx tsx src/cli.ts -r . --format json > results.json
+npx zkir-lint -r contracts/src/artifacts/
 ```
 
-## Rules
-
-| Rule | Severity | Description |
-|------|----------|-------------|
-| **DIV-001** | error | `constrain_bits` on arithmetic result in conditional branch. The [#226 pattern](https://github.com/LFDT-Minokawa/compact/issues/226): `as Uint<N>` inside `if/else` generates an unguarded constraint that fires on dead-branch values. |
-| **DIV-002** | error | `reconstitute_field` in conditional branch. Compiler FIXME: `passes.ss:9671` "zkir bytes->field needs to respect test". |
-| **DIV-003** | warn | `div_mod_power_of_two` in conditional branch. Compiler FIXME: `passes.ss:9350` "zkir field->bytes needs to respect test". |
-| **DIV-004** | warn | `assert` on branch-local value. Fires unconditionally in ZK even when the branch is logically unreachable. |
-| **DIV-005** | warn | `constrain_eq` in conditional branch. Same class as DIV-001 but for equality constraints. |
-| **STATS-001** | info | Guard nesting depth >= 4. Deep conditionals multiply divergence risk. |
-| **STATS-002** | info | Constraint density > 25%. May indicate redundant bit constraints. |
-
-## How it works
-
-1. Parses ZKIR v2 JSON files (v3 support planned)
-2. Builds a data-flow graph mapping each instruction to the memory variable it produces
-3. Tracks which variables are under branch guards (from guarded `private_input`/`public_input`)
-4. Propagates guard information through arithmetic operations
-5. Uses memoized zero-analysis: determines if a variable is guaranteed to be 0 when its guard is false (safe) vs potentially non-zero (dangerous)
-6. Flags constraint instructions (`constrain_bits`, `reconstitute_field`, `assert`, `constrain_eq`) that operate on branch-local values not yet merged by `cond_select`
-
-## Example output
-
 ```
-zkir-lint: scanned 217 file(s)
+  addLiquidity (v2): 5 error(s)
+    ERROR [DIV-001] constrain_bits(bits=64) on arithmetic in conditional branch (guard=824)
+      Fix: move the `as Uint<64>` cast outside the if/else, or use branchless computation.
 
-  addLiquidity (v2): 5 error(s), 259 warning(s)
-    10296 instructions, 17 inputs, 1678 constrain_bits, 1827 cond_select, 14 guarded regions (max depth 2)
-    ERROR [DIV-001] inst 5029: constrain_bits(var=3059, bits=64) on arithmetic result in guarded region (guard=2603)
-    ERROR [DIV-001] inst 5754: constrain_bits(var=3542, bits=64) on arithmetic result in guarded region (guard=3085)
-    ...
-
-401 error(s), 612 warning(s), 4 info(s) | 208/217 clean
+5 error(s) | 4/11 circuits affected
 ```
 
-## Workaround for DIV-001
+## The problem
 
-Until the compiler fix ([#226](https://github.com/LFDT-Minokawa/compact/issues/226)) lands, avoid narrowing casts (`as Uint<N>`) inside conditional branches. Use branchless computation instead:
+Compact compiler 0.30.0 + compact-runtime 0.15.0 have a known class of bugs where **your circuit works perfectly in JavaScript but fails at proof time**. The JS runtime uses real `if/else` branching, but ZK circuits execute both branches unconditionally. Narrowing casts (`as Uint<N>`), assertions, and other constraints inside conditional branches fire on dead-branch values, causing:
+
+```
+BadInput("Bit bound failed: 000000000000000001 is not 64-bit")
+```
+
+This was first hit by the LunarSwap team ([compact#250](https://github.com/LFDT-Minokawa/compact/issues/250)) and traced to a [compiler bug](https://github.com/LFDT-Minokawa/compact/issues/226) with no timeline for a fix. **Every contract using `as Uint<N>` inside `if/else` is affected.**
+
+## Install and run
+
+```bash
+# Scan a single circuit
+npx zkir-lint circuit.zkir
+
+# Scan all circuits in your compiled artifacts
+npx zkir-lint -r contracts/src/artifacts/
+
+# Errors only (most actionable)
+npx zkir-lint -r contracts/src/artifacts/ --severity error
+
+# CI-friendly: SARIF output, non-zero exit on errors
+npx zkir-lint -r contracts/src/artifacts/ --format sarif > results.sarif
+
+# JSON output for programmatic use
+npx zkir-lint -r contracts/src/artifacts/ --format json
+```
+
+No dependencies on Midnight packages. Reads the `.zkir` JSON files that the compiler already produces.
+
+## What it finds
+
+### Errors — will break at proof time
+
+| Rule | What breaks | How to fix |
+|------|------------|------------|
+| **DIV-001** | `as Uint<N>` inside `if/else` generates `constrain_bits` that fires on dead-branch values. Your proof server returns "Bit bound failed". | Move the cast outside the conditional. Use branchless computation (see below). |
+| **DIV-002** | `Bytes → Field` conversion inside `if/else`. The `reconstitute_field` instruction has internal constraints that fire unconditionally. | Perform the conversion before the branch or after the `cond_select` merge point. |
+
+### Warnings — may break depending on inputs
+
+| Rule | What can break | How to fix |
+|------|---------------|------------|
+| **DIV-003** | `Field → Bytes` conversion inside `if/else`. Same pattern as DIV-002 but for the reverse direction. | Move conversion outside the conditional. |
+| **DIV-004** | `assert` inside `if/else` fires on dead-branch values. JS skips the assert (branch not taken), but ZKIR evaluates it. You get "Failed direct assertion" from the proof server. | Guard the assertion condition: `assert(condition \|\| !branchGuard)`. Or restructure so the assert is after the `cond_select`. |
+| **DIV-005** | `constrain_eq` inside `if/else`. Same class as DIV-001 but for equality constraints. | Move the equality check outside the conditional. |
+| **RT-001** | `persistent_hash` with inputs from a conditional branch. ZKIR re-parses field elements through alignment before hashing; JS hashes `AlignedValue` directly. Different code paths may produce different hash inputs. | Ensure hash inputs are not from guarded regions, or hash after the branch merge. |
+
+### Info — code quality
+
+| Rule | What it flags |
+|------|--------------|
+| **RT-002** | `less_than` with guarded operands — bit extraction on dead-branch values. |
+| **RT-003** | `transient_hash` with guarded inputs — JS `CompactTypeBytes.toValue()` strips trailing zeros, ZKIR uses raw field elements. |
+| **RT-004** | Deep arithmetic chains (8+ operations) without intermediate constraints. JS field arithmetic uses a single-subtraction shortcut that may not reduce correctly for long chains. |
+| **STATS-001** | Guard nesting depth >= 4. Deep conditionals multiply divergence risk. |
+| **STATS-002** | Constraint density > 25%. May indicate redundant bit constraints from the compiler. |
+
+## How to fix DIV-001 (the most common issue)
+
+The pattern that breaks:
 
 ```compact
-// Instead of:
+if (condition) {
+    const x = someComputation();
+    return x as Uint<64>;  // constrain_bits(64) fires even when condition is false
+} else {
+    return 0;
+}
+```
+
+**Fix: branchless computation.** Move the narrowing cast outside the branch:
+
+```compact
+// Compute both branches, select result, THEN cast
+const ifResult = someComputation();
+const result = condition ? ifResult : 0;
+return result as Uint<64>;  // constrain_bits on the SELECTED value — always safe
+```
+
+Or use arithmetic to avoid branching entirely:
+
+```compact
+// Instead of if/else with cast in one branch:
+const result = baseValue + condition * adjustment;
+return result as Uint<64>;  // always safe because result is always in range
+```
+
+Real example from [OpenZeppelin Uint128.subU128](https://github.com/OpenZeppelin/midnight-apps/pull/309):
+
+```compact
+// BEFORE (broken): as Uint<64> in else branch
 if (borrow == 0) {
     return U128 { low: a.low - b.low, high: highDiff };
 } else {
     return U128 { low: (a.low + MODULUS() - b.low) as Uint<64>, high: highDiff };
 }
 
-// Use branchless:
+// AFTER (fixed): branchless, cast always safe
 const lowDiff = a.low + borrow * MODULUS() - b.low;
 return U128 { low: lowDiff as Uint<64>, high: highDiff };
 ```
 
-## Differential Fuzz Testing
+## Affected versions
 
-Beyond static analysis, zkir-lint includes a differential testing harness that runs circuits through both `compact-runtime` (JS) and ZKIR preprocessing (WASM) to find divergences with concrete inputs.
+- **Compact compiler:** 0.30.0 (and likely earlier versions)
+- **compact-runtime:** 0.15.0
+- **ZKIR format:** v2 (v3 has the same issue per compiler source FIXMEs)
+- **Tracking issue:** [compact#226](https://github.com/LFDT-Minokawa/compact/issues/226) (open, assigned)
 
-### Architecture
+## How it works
 
-```
-                    ┌─────────────────┐
-  Fuzz Inputs ───▶  │  compact-runtime │──▶ ProofData (JS succeeds)
-  (generated        │  (BigInt, real   │         │
-   from ZKIR)       │   branching)     │         ▼
-                    └─────────────────┘   ┌─────────────────┐
-                                          │ proofDataInto    │
-                                          │ SerializedPre-   │──▶ ProofPreimage
-                                          │ image() [WASM]   │         │
-                                          └─────────────────┘         ▼
-                                                              ┌─────────────────┐
-                                                              │ checkV2/checkV3  │
-                                                              │ [WASM: ir_vm.rs  │
-                                                              │  preprocess()]   │
-                                                              └────────┬────────┘
-                                                                       │
-                                                         JS pass + ZKIR fail = DIVERGENCE
-```
+1. Parses compiled `.zkir` JSON (v2 format, zero Midnight dependencies)
+2. Builds a data-flow graph: which instruction produces which variable
+3. Tracks guard propagation: which variables are inside conditional branches
+4. Memoized zero-analysis: determines if dead-branch values default to zero (safe) vs non-zero (dangerous)
+5. Flags constraint instructions operating on branch-local values before they reach a `cond_select` merge
 
-### Input Generation
+## Advanced: differential fuzz testing
 
-The fuzz input generator parses ZKIR to extract:
-- Input count and bit-width constraints from `constrain_bits`
-- Branch conditions from `test_eq` and `less_than` instructions
-- Boundary values (0, 1, max-1, max) for each constrained input
+For deeper analysis, zkir-lint includes a differential testing harness that runs circuits through both `compact-runtime` (JS) and ZKIR preprocessing (WASM). This catches divergences that static analysis can't — but requires the Midnight npm packages.
 
-```typescript
-import { generateFuzzInputs, extractBranchConditions } from 'zkir-lint';
-
-const zkir = JSON.parse(readFileSync('circuit.zkir', 'utf-8'));
-const inputs = generateFuzzInputs(zkir, 100);  // 100 fuzz inputs
-const branches = extractBranchConditions(zkir); // branch-targeted inputs
-```
-
-### Harness Integration
-
-Wire up with your compiled Compact contract:
-
-```typescript
-import { createHarness, fuzzCircuit } from 'zkir-lint';
-import { Contract } from './artifacts/MyContract/contract/index.js';
-import { checkProofData } from '@compact/test-center/key-provider.js';
-
-const harness = createHarness({
-  contractDir: './artifacts/MyContract',
-  contract: new Contract(witnesses),
-  initialState: (c) => c.initialState(ctx, ...args),
-  createContext: (cs, ps, cpk) => createCircuitContext(...),
-  checkProofData: (name, pd) => checkProofData(dir, name, pd),
-});
-
-const results = await fuzzCircuit(harness, 'myCircuit', {
-  inputs: generateFuzzInputs(zkir, 100),
-  verbose: true,
-  resetBetweenRuns: true,
-});
-
-if (results.divergences > 0) {
-  console.error(formatDiffSummary(results));
-  // JS succeeded but ZKIR failed — divergence found!
-}
-```
-
-### Components
-
-| Module | Purpose |
-|--------|---------|
-| `src/fuzz.ts` | ZKIR-guided input generation (boundary, branch-targeted, random) |
-| `src/diff.ts` | Differential test runner (JS vs ZKIR comparison engine) |
-| `src/harness.ts` | Test harness factory (wires contract + runtime + ZKIR check) |
-| `examples/lunarswap-fuzz.ts` | Concrete example with LunarSwap |
+See [`examples/diff-test-template.ts`](examples/diff-test-template.ts) for the integration pattern, and [`examples/lunarswap-diff-test.ts`](examples/lunarswap-diff-test.ts) for the proven LunarSwap reproduction of compact#250.
 
 ## License
 

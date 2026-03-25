@@ -1,15 +1,22 @@
 {
   "name": "zkir-lint",
   "version": "0.1.0",
-  "description": "Static analyzer for Compact ZKIR files — detects JS/ZK divergence patterns",
+  "description": "Find Compact circuit bugs before your users do. Detects JS/ZK divergence patterns where compact-runtime succeeds but proof validation fails.",
   "type": "module",
   "bin": {
     "zkir-lint": "dist/cli.js"
   },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
   "scripts": {
     "build": "tsc",
-    "lint": "oxlint src/",
-    "test": "vitest run",
+    "prepublishOnly": "tsc",
     "dev": "tsx src/cli.ts"
   },
   "files": [
@@ -21,11 +28,18 @@
     "zkir",
     "zk",
     "lint",
-    "static-analysis"
+    "static-analysis",
+    "proof-server",
+    "zero-knowledge"
   ],
   "license": "Apache-2.0",
-  "main": "index.js",
-  "author": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/adamreynolds-io/zkir-lint.git"
+  },
+  "engines": {
+    "node": ">=18"
+  },
   "devDependencies": {
     "@types/node": "^25.5.0",
     "tsx": "^4.21.0",
