@@ -1,0 +1,19 @@
+pragma language_version >= 0.22.0;
+
+// Clean contract: ledger state with assertions (no conditional casts).
+// Expected: compiles and lints with 0 errors.
+
+ledger balance: Uint<64>;
+ledger frozen: Boolean;
+
+export circuit transfer(amount: Uint<64>): [] {
+  assert(!frozen, "Account is frozen");
+  assert(balance >= amount, "Insufficient balance");
+  balance = disclose(balance - amount) as Uint<64>;
+  return [];
+}
+
+export circuit toggle_freeze(): [] {
+  frozen = !frozen;
+  return [];
+}
