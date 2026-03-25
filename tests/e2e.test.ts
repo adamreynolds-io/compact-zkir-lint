@@ -68,7 +68,7 @@ const hasCompact = compactAvailable();
 
 describe.skipIf(!hasCompact)("E2E: Compact source → compile → lint", () => {
   describe("clean contracts (no findings expected)", () => {
-    it("clean-conditional.compact compiles and lints clean", () => {
+    it("clean-conditional.compact compiles and lints clean", async () => {
       const zkirDir = compileCompact(
         join(FIXTURES_DIR, "clean-conditional.compact"),
       );
@@ -85,13 +85,13 @@ describe.skipIf(!hasCompact)("E2E: Compact source → compile → lint", () => {
       expect(zkirFiles.length).toBeGreaterThan(0);
 
       for (const file of zkirFiles) {
-        const report = analyzeFile(join(zkirDir, file));
+        const report = await analyzeFile(join(zkirDir, file));
         const errors = report.findings.filter((f) => f.severity === "error");
         expect(errors).toHaveLength(0);
       }
     });
 
-    it("conditional-state.compact compiles and lints clean", () => {
+    it("conditional-state.compact compiles and lints clean", async () => {
       const zkirDir = compileCompact(
         join(FIXTURES_DIR, "conditional-state.compact"),
       );
@@ -107,13 +107,13 @@ describe.skipIf(!hasCompact)("E2E: Compact source → compile → lint", () => {
       expect(zkirFiles.length).toBeGreaterThan(0);
 
       for (const file of zkirFiles) {
-        const report = analyzeFile(join(zkirDir, file));
+        const report = await analyzeFile(join(zkirDir, file));
         const errors = report.findings.filter((f) => f.severity === "error");
         expect(errors).toHaveLength(0);
       }
     });
 
-    it("cast-in-branch.compact compiles (compiler may optimize the cast)", () => {
+    it("cast-in-branch.compact compiles (compiler may optimize the cast)", async () => {
       const zkirDir = compileCompact(
         join(FIXTURES_DIR, "cast-in-branch.compact"),
       );
@@ -131,7 +131,7 @@ describe.skipIf(!hasCompact)("E2E: Compact source → compile → lint", () => {
       // The compiler may place constrain_bits after cond_select for simple
       // cases — log the result either way
       for (const file of zkirFiles) {
-        const report = analyzeFile(join(zkirDir, file));
+        const report = await analyzeFile(join(zkirDir, file));
         const errors = report.findings.filter((f) => f.severity === "error");
         console.log(
           `  ${file}: ${errors.length} error(s), ${report.findings.length} total finding(s)`,
@@ -142,8 +142,8 @@ describe.skipIf(!hasCompact)("E2E: Compact source → compile → lint", () => {
 });
 
 describe("E2E: real compiled circuits with known issues", () => {
-  it("micro-dao advance.zkir has DIV-001 error", () => {
-    const report = analyzeFile(
+  it("micro-dao advance.zkir has DIV-001 error", async () => {
+    const report = await analyzeFile(
       join(REAL_FIXTURES_DIR, "micro-dao-advance.zkir"),
     );
     const errors = report.findings.filter(
@@ -154,8 +154,8 @@ describe("E2E: real compiled circuits with known issues", () => {
     expect(errors[0]!.message).toContain("bits=64");
   });
 
-  it("micro-dao cashOut.zkir has DIV-001 error", () => {
-    const report = analyzeFile(
+  it("micro-dao cashOut.zkir has DIV-001 error", async () => {
+    const report = await analyzeFile(
       join(REAL_FIXTURES_DIR, "micro-dao-cashOut.zkir"),
     );
     const errors = report.findings.filter(
@@ -166,15 +166,117 @@ describe("E2E: real compiled circuits with known issues", () => {
     expect(errors[0]!.message).toContain("bits=32");
   });
 
-  it("tiny-get.zkir is clean", () => {
-    const report = analyzeFile(join(REAL_FIXTURES_DIR, "tiny-get.zkir"));
+  it("tiny-get.zkir is clean", async () => {
+    const report = await analyzeFile(join(REAL_FIXTURES_DIR, "tiny-get.zkir"));
     const errors = report.findings.filter((f) => f.severity === "error");
     expect(errors).toHaveLength(0);
   });
 
-  it("tiny-set.zkir is clean", () => {
-    const report = analyzeFile(join(REAL_FIXTURES_DIR, "tiny-set.zkir"));
+  it("tiny-set.zkir is clean", async () => {
+    const report = await analyzeFile(join(REAL_FIXTURES_DIR, "tiny-set.zkir"));
     const errors = report.findings.filter((f) => f.severity === "error");
     expect(errors).toHaveLength(0);
+  });
+});
+
+describe("E2E: profiling", () => {
+  it("--profile produces k estimate and proving times", async () => {
+    const report = await analyzeFile(
+      join(REAL_FIXTURES_DIR, "micro-dao-advance.zkir"),
+      { profile: true },
+    );
+    expect(report.profile).toBeDefined();
+    expect(report.profile!.k).toBeGreaterThanOrEqual(9);
+    expect(report.profile!.kSource).toBe("estimated");
+    expect(report.profile!.rows).toBeGreaterThan(0);
+    expect(report.profile!.hashCount).toBeGreaterThanOrEqual(1);
+    expect(report.profile!.estimates.length).toBeGreaterThanOrEqual(4);
+
+    for (const est of report.profile!.estimates) {
+      expect(est.environment).toBeTruthy();
+      expect(typeof est.feasible).toBe("boolean");
+      expect(est.estimatedSeconds).toHaveLength(2);
+      expect(["ok", "slow", "infeasible"]).toContain(est.verdict);
+    }
+  });
+
+  it("--profile with --target filters environments", async () => {
+    const report = await analyzeFile(
+      join(REAL_FIXTURES_DIR, "tiny-get.zkir"),
+      { profile: true, targets: ["docker"] },
+    );
+    expect(report.profile).toBeDefined();
+    expect(report.profile!.estimates).toHaveLength(1);
+    expect(report.profile!.estimates[0]!.environment).toBe("docker");
+  });
+
+  it("--max-k produces PERF-006 when exceeded", async () => {
+    const report = await analyzeFile(
+      join(REAL_FIXTURES_DIR, "micro-dao-cashOut.zkir"),
+      { profile: true, maxK: 10 },
+    );
+    expect(report.profile).toBeDefined();
+    expect(report.profile!.k).toBeGreaterThan(10);
+    expect(report.profile!.maxK).toBe(10);
+
+    const perf006 = report.findings.find((f) => f.rule === "PERF-006");
+    expect(perf006).toBeDefined();
+    expect(perf006!.severity).toBe("error");
+    expect(perf006!.message).toContain("exceeds maximum k=10");
+  });
+
+  it("--max-k does not fire when circuit is within limit", async () => {
+    const report = await analyzeFile(
+      join(REAL_FIXTURES_DIR, "tiny-get.zkir"),
+      { profile: true, maxK: 20 },
+    );
+    const perf006 = report.findings.find((f) => f.rule === "PERF-006");
+    expect(perf006).toBeUndefined();
+  });
+
+  it("custom environments override defaults", async () => {
+    const report = await analyzeFile(
+      join(REAL_FIXTURES_DIR, "micro-dao-advance.zkir"),
+      {
+        profile: true,
+        environments: {
+          "test-env": {
+            label: "Test",
+            maxK: 10,
+            warnK: 8,
+            timings: [[8, 1, 2], [10, 5, 10]],
+          },
+        },
+        targets: ["test-env"],
+      },
+    );
+    expect(report.profile).toBeDefined();
+    expect(report.profile!.estimates).toHaveLength(1);
+    expect(report.profile!.estimates[0]!.environment).toBe("test-env");
+
+    // k=11 exceeds test-env maxK=10, so infeasible
+    expect(report.profile!.estimates[0]!.feasible).toBe(false);
+    expect(report.profile!.estimates[0]!.verdict).toBe("infeasible");
+  });
+
+  it("profiling does not interfere with divergence findings", async () => {
+    const report = await analyzeFile(
+      join(REAL_FIXTURES_DIR, "micro-dao-advance.zkir"),
+      { profile: true },
+    );
+    const div001 = report.findings.find((f) => f.rule === "DIV-001");
+    expect(div001).toBeDefined();
+    expect(div001!.severity).toBe("error");
+  });
+
+  it("clean circuit with profiling has no PERF errors", async () => {
+    const report = await analyzeFile(
+      join(REAL_FIXTURES_DIR, "tiny-get.zkir"),
+      { profile: true },
+    );
+    const perfErrors = report.findings.filter(
+      (f) => f.rule.startsWith("PERF") && f.severity === "error",
+    );
+    expect(perfErrors).toHaveLength(0);
   });
 });

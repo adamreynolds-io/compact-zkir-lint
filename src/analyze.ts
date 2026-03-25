@@ -7,11 +7,17 @@ import { readFileSync } from "node:fs";
 import { basename } from "node:path";
 
 import { buildIrGraph, guardDepth } from "./ir.js";
-import { ALL_RULES } from "./rules.js";
+import {
+  profileCircuit,
+  type EnvironmentConfig,
+  type ProfileOptions,
+} from "./profile.js";
+import { ALL_PERF_RULES, ALL_RULES } from "./rules.js";
 import type {
   CircuitReport,
   CircuitStats,
   Finding,
+  RowCost,
   Zkir,
   ZkirV2,
   ZkirV3,
@@ -76,7 +82,19 @@ function computeStats(zkir: Zkir): CircuitStats {
   };
 }
 
-export function analyzeFile(filePath: string): CircuitReport {
+export interface AnalyzeOptions {
+  profile?: boolean;
+  targets?: string[];
+  kSource?: "estimate" | "wasm" | "auto";
+  maxK?: number;
+  environments?: Record<string, EnvironmentConfig>;
+  rowCosts?: Record<string, RowCost>;
+}
+
+export async function analyzeFile(
+  filePath: string,
+  options: AnalyzeOptions = {},
+): Promise<CircuitReport> {
   const raw = readFileSync(filePath, "utf-8");
   const parsed: { version: { major: number; minor: number } } = JSON.parse(raw);
   const name = basename(filePath, ".zkir");
@@ -121,5 +139,29 @@ export function analyzeFile(filePath: string): CircuitReport {
     findings.push(...rule(graph));
   }
 
-  return { file: filePath, name, version: zkir.version.major, stats, findings };
+  const report: CircuitReport = {
+    file: filePath,
+    name,
+    version: zkir.version.major,
+    stats,
+    findings,
+  };
+
+  if (options.profile) {
+    const profileOpts: ProfileOptions = {
+      targets: options.targets,
+      kSource: options.kSource,
+      rawJson: raw,
+      maxK: options.maxK,
+      environments: options.environments,
+      costOverrides: options.rowCosts,
+    };
+    report.profile = await profileCircuit(zkir, profileOpts);
+
+    for (const perfRule of ALL_PERF_RULES) {
+      findings.push(...perfRule(report.profile));
+    }
+  }
+
+  return report;
 }

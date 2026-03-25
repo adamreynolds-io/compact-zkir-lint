@@ -40,6 +40,7 @@ export interface CircuitReport {
   version: number;
   stats: CircuitStats;
   findings: Finding[];
+  profile?: CircuitProfile;
 }
 
 export interface CircuitStats {
@@ -62,4 +63,50 @@ export interface ScanSummary {
   totalInfos: number;
   cleanFiles: number;
   reports: CircuitReport[];
+}
+
+/** Built-in proving environment names. Custom names are also allowed. */
+export type ProvingTarget = string;
+
+/** How the k value was determined. */
+export type KSource = "exact-wasm" | "estimated";
+
+/** Proving time estimate for a specific environment. */
+export interface ProvingEstimate {
+  environment: string;
+  feasible: boolean;
+  estimatedSeconds: [number, number];
+  verdict: "ok" | "slow" | "infeasible";
+}
+
+/** Circuit performance profile. */
+export interface CircuitProfile {
+  k: number;
+  kSource: KSource;
+  rows: number;
+  tableRows: number;
+  hashCount: number;
+  hashRows: number;
+  ecOpCount: number;
+  ecOpRows: number;
+  estimates: ProvingEstimate[];
+  /** User-defined maximum k (from --max-k). */
+  maxK?: number;
+}
+
+/** Row cost for a single ZKIR instruction type. */
+export interface RowCost {
+  rows: number;
+  tableRows: number;
+}
+
+/** K estimation result from the heuristic estimator. */
+export interface KEstimate {
+  k: number;
+  rows: number;
+  tableRows: number;
+  hashCount: number;
+  hashRows: number;
+  ecOpCount: number;
+  ecOpRows: number;
 }

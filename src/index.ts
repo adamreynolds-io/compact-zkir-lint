@@ -1,7 +1,17 @@
 // Static analysis
 export { analyzeFile } from "./analyze.js";
 export { buildIrGraph, buildZeroAnalysis, guardDepth } from "./ir.js";
-export { ALL_RULES } from "./rules.js";
+export { ALL_RULES, ALL_PERF_RULES } from "./rules.js";
+export { loadConfig, type LintConfig } from "./config.js";
+export {
+  profileCircuit,
+  formatDuration,
+  formatEstimateRange,
+  DEFAULT_ENVIRONMENTS,
+  type EnvironmentConfig,
+  type TimingEntry,
+} from "./profile.js";
+export { estimateK } from "./ir.js";
 export { formatSummary, exitCode, type Format } from "./format.js";
 
 // Fuzz input generation
@@ -39,6 +49,10 @@ export type {
   Finding,
   CircuitReport,
   CircuitStats,
+  CircuitProfile,
+  ProvingEstimate,
+  ProvingTarget,
+  KEstimate,
   ScanSummary,
   Severity,
 } from "./types.js";
