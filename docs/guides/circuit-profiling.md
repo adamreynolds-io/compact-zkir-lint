@@ -147,7 +147,6 @@ If your circuit is too large for your target environment:
 | Rule | Severity | Condition | Requires --profile |
 |------|----------|-----------|--------------------|
 | [PERF-001](../rules/PERF-001.md) | warn | k > 15 (WASM hard limit) | No (always-on) |
-| [PERF-002](../rules/PERF-002.md) | warn | k >= 18 (infeasible for WASM desktop) | Yes |
 | [PERF-003](../rules/PERF-003.md) | info | k >= 20 (slow on Docker, needs GPU) | Yes |
 | [PERF-004](../rules/PERF-004.md) | warn | Hash ops > 80% of circuit rows | Yes |
 | [PERF-005](../rules/PERF-005.md) | info | Lookup tables inflate k | Yes |

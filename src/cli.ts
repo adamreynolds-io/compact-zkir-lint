@@ -104,7 +104,6 @@ Rules:
   STATS-001  Deep guard nesting (>= 4 levels)
   STATS-002  High constraint density (> 25%)
   PERF-001   Circuit exceeds WASM prover limit (k > 15)
-  PERF-002   Circuit too large for WASM desktop (k >= 18)
   PERF-003   Circuit needs GPU proving (k >= 20)
   PERF-004   Hash operations dominate circuit size
   PERF-005   Lookup tables inflate circuit k
