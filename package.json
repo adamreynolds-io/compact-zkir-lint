@@ -1,0 +1,34 @@
+{
+  "name": "zkir-lint",
+  "version": "0.1.0",
+  "description": "Static analyzer for Compact ZKIR files — detects JS/ZK divergence patterns",
+  "type": "module",
+  "bin": {
+    "zkir-lint": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "lint": "oxlint src/",
+    "test": "vitest run",
+    "dev": "tsx src/cli.ts"
+  },
+  "files": [
+    "dist/"
+  ],
+  "keywords": [
+    "compact",
+    "midnight",
+    "zkir",
+    "zk",
+    "lint",
+    "static-analysis"
+  ],
+  "license": "Apache-2.0",
+  "main": "index.js",
+  "author": "",
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.2"
+  }
+}
