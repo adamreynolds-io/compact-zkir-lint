@@ -79,6 +79,84 @@ const lowDiff = a.low + borrow * MODULUS() - b.low;
 return U128 { low: lowDiff as Uint<64>, high: highDiff };
 ```
 
+## Differential Fuzz Testing
+
+Beyond static analysis, zkir-lint includes a differential testing harness that runs circuits through both `compact-runtime` (JS) and ZKIR preprocessing (WASM) to find divergences with concrete inputs.
+
+### Architecture
+
+```
+                    ┌─────────────────┐
+  Fuzz Inputs ───▶  │  compact-runtime │──▶ ProofData (JS succeeds)
+  (generated        │  (BigInt, real   │         │
+   from ZKIR)       │   branching)     │         ▼
+                    └─────────────────┘   ┌─────────────────┐
+                                          │ proofDataInto    │
+                                          │ SerializedPre-   │──▶ ProofPreimage
+                                          │ image() [WASM]   │         │
+                                          └─────────────────┘         ▼
+                                                              ┌─────────────────┐
+                                                              │ checkV2/checkV3  │
+                                                              │ [WASM: ir_vm.rs  │
+                                                              │  preprocess()]   │
+                                                              └────────┬────────┘
+                                                                       │
+                                                         JS pass + ZKIR fail = DIVERGENCE
+```
+
+### Input Generation
+
+The fuzz input generator parses ZKIR to extract:
+- Input count and bit-width constraints from `constrain_bits`
+- Branch conditions from `test_eq` and `less_than` instructions
+- Boundary values (0, 1, max-1, max) for each constrained input
+
+```typescript
+import { generateFuzzInputs, extractBranchConditions } from 'zkir-lint';
+
+const zkir = JSON.parse(readFileSync('circuit.zkir', 'utf-8'));
+const inputs = generateFuzzInputs(zkir, 100);  // 100 fuzz inputs
+const branches = extractBranchConditions(zkir); // branch-targeted inputs
+```
+
+### Harness Integration
+
+Wire up with your compiled Compact contract:
+
+```typescript
+import { createHarness, fuzzCircuit } from 'zkir-lint';
+import { Contract } from './artifacts/MyContract/contract/index.js';
+import { checkProofData } from '@compact/test-center/key-provider.js';
+
+const harness = createHarness({
+  contractDir: './artifacts/MyContract',
+  contract: new Contract(witnesses),
+  initialState: (c) => c.initialState(ctx, ...args),
+  createContext: (cs, ps, cpk) => createCircuitContext(...),
+  checkProofData: (name, pd) => checkProofData(dir, name, pd),
+});
+
+const results = await fuzzCircuit(harness, 'myCircuit', {
+  inputs: generateFuzzInputs(zkir, 100),
+  verbose: true,
+  resetBetweenRuns: true,
+});
+
+if (results.divergences > 0) {
+  console.error(formatDiffSummary(results));
+  // JS succeeded but ZKIR failed — divergence found!
+}
+```
+
+### Components
+
+| Module | Purpose |
+|--------|---------|
+| `src/fuzz.ts` | ZKIR-guided input generation (boundary, branch-targeted, random) |
+| `src/diff.ts` | Differential test runner (JS vs ZKIR comparison engine) |
+| `src/harness.ts` | Test harness factory (wires contract + runtime + ZKIR check) |
+| `examples/lunarswap-fuzz.ts` | Concrete example with LunarSwap |
+
 ## License
 
 Apache-2.0
