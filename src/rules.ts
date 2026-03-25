@@ -485,3 +485,163 @@ export const ALL_RULES: Rule[] = [
   deepGuardNesting,
   constraintDensity,
 ];
+
+// ── Performance rules (run when --profile is enabled) ──
+
+export type PerfRule = (
+  profile: import("./types.js").CircuitProfile,
+) => Finding[];
+
+/**
+ * PERF-001: Circuit too large for WASM mobile proving.
+ * k >= 16 means the circuit cannot be proved on a mobile device
+ * within acceptable time limits (single-threaded WASM, limited memory).
+ */
+export const wasmMobileLimit: PerfRule = (profile) => {
+  if (profile.k < 16) return [];
+  return [
+    {
+      severity: "error",
+      rule: "PERF-001",
+      instructionIndex: -1,
+      memoryVar: null,
+      message: `Circuit k=${profile.k} exceeds WASM mobile limit (k <= 15)`,
+      details:
+        `WASM in-browser proving is single-threaded and memory-constrained. ` +
+        `Circuits with k >= 16 (${2 ** profile.k} rows) are infeasible ` +
+        `on mobile devices. Consider reducing hash operations ` +
+        `(${profile.hashCount} hashes = ${profile.hashRows} rows) ` +
+        `or simplifying the circuit.`,
+    },
+  ];
+};
+
+/**
+ * PERF-002: Circuit too large for WASM desktop proving.
+ * k >= 18 means the circuit cannot be proved in a desktop browser
+ * within acceptable time limits.
+ */
+export const wasmDesktopLimit: PerfRule = (profile) => {
+  if (profile.k < 18) return [];
+  return [
+    {
+      severity: "warn",
+      rule: "PERF-002",
+      instructionIndex: -1,
+      memoryVar: null,
+      message: `Circuit k=${profile.k} exceeds WASM desktop limit (k <= 17)`,
+      details:
+        `Desktop WASM proving is single-threaded. ` +
+        `Circuits with k >= 18 (${2 ** profile.k} rows) require ` +
+        `a proof server (Docker or remote GPU). ` +
+        `Curve parameter files at this k are ~500MB+.`,
+    },
+  ];
+};
+
+/**
+ * PERF-003: Circuit requires GPU proving.
+ * k >= 20 means the circuit is slow on CPU-based Docker proof servers
+ * and benefits from GPU acceleration.
+ */
+export const gpuRequired: PerfRule = (profile) => {
+  if (profile.k < 20) return [];
+  return [
+    {
+      severity: "info",
+      rule: "PERF-003",
+      instructionIndex: -1,
+      memoryVar: null,
+      message: `Circuit k=${profile.k} is slow on CPU (k >= 20, consider GPU)`,
+      details:
+        `At k=${profile.k} (${2 ** profile.k} rows), CPU proving takes ` +
+        `60+ seconds. Remote GPU proving services handle this in ` +
+        `30-180 seconds depending on k.`,
+    },
+  ];
+};
+
+/**
+ * PERF-004: Hash operations dominate circuit size.
+ * If >80% of estimated rows come from hash operations, the circuit
+ * may benefit from using fewer hashes or a cheaper hash function.
+ */
+export const hashDominatedCircuit: PerfRule = (profile) => {
+  if (profile.rows === 0 || profile.hashCount === 0) return [];
+  const hashRatio = profile.hashRows / profile.rows;
+  if (hashRatio <= 0.8) return [];
+  return [
+    {
+      severity: "warn",
+      rule: "PERF-004",
+      instructionIndex: -1,
+      memoryVar: null,
+      message:
+        `Hash ops dominate circuit: ${profile.hashCount} hashes = ` +
+        `${(hashRatio * 100).toFixed(0)}% of rows`,
+      details:
+        `${profile.hashCount} hash operations contribute ${profile.hashRows} ` +
+        `of ${profile.rows} estimated rows (${(hashRatio * 100).toFixed(0)}%). ` +
+        `Each Poseidon hash costs ~704 rows. Consider reducing the number ` +
+        `of hash operations or batching data before hashing.`,
+    },
+  ];
+};
+
+/**
+ * PERF-005: Circuit uses lookup tables that inflate k.
+ * Lookup tables (from hash gadgets or range checks) force the circuit
+ * to have at least 2^k rows where k = ceil(log2(table_rows)).
+ */
+export const lookupTableInflation: PerfRule = (profile) => {
+  if (profile.tableRows <= 256) return [];
+  const tableK = Math.ceil(Math.log2(profile.tableRows + 1));
+  if (tableK + 1 < profile.k) return [];
+  return [
+    {
+      severity: "info",
+      rule: "PERF-005",
+      instructionIndex: -1,
+      memoryVar: null,
+      message:
+        `Lookup tables force k >= ${tableK} ` +
+        `(${profile.tableRows} table rows)`,
+      details:
+        `The circuit's lookup tables require ${profile.tableRows} rows, ` +
+        `forcing k >= ${tableK} regardless of instruction count. ` +
+        `This is common with hash gadgets that use precomputed tables.`,
+    },
+  ];
+};
+
+/**
+ * PERF-006: Circuit exceeds user-defined maximum k.
+ * Fires when --max-k is set and the circuit's k exceeds it.
+ */
+export const maxKExceeded: PerfRule = (profile) => {
+  if (profile.maxK == null || profile.k <= profile.maxK) return [];
+  return [
+    {
+      severity: "error",
+      rule: "PERF-006",
+      instructionIndex: -1,
+      memoryVar: null,
+      message:
+        `Circuit k=${profile.k} exceeds maximum k=${profile.maxK} ` +
+        `(set via --max-k)`,
+      details:
+        `The circuit requires 2^${profile.k} = ${(2 ** profile.k).toLocaleString()} rows, ` +
+        `but the configured limit is 2^${profile.maxK} = ${(2 ** profile.maxK).toLocaleString()} rows. ` +
+        `Reduce circuit complexity or increase --max-k.`,
+    },
+  ];
+};
+
+export const ALL_PERF_RULES: PerfRule[] = [
+  maxKExceeded,
+  wasmMobileLimit,
+  wasmDesktopLimit,
+  gpuRequired,
+  hashDominatedCircuit,
+  lookupTableInflation,
+];

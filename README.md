@@ -25,6 +25,9 @@ npx compact-zkir-lint circuit.zkir
 # Scan all circuits in your compiled artifacts
 npx compact-zkir-lint -r contracts/src/artifacts/
 
+# Profile proving time across environments
+npx compact-zkir-lint --profile -r contracts/src/artifacts/
+
 # CI-friendly: SARIF output, non-zero exit on errors
 npx compact-zkir-lint -r contracts/src/artifacts/ --format sarif > results.sarif
 ```
@@ -35,13 +38,14 @@ No dependencies on Midnight packages. Reads the `.zkir` JSON files that the comp
 
 In ZK circuits, both branches of an `if/else` execute unconditionally — only the result is selected via `cond_select`. Constraints inside dead branches fire on invalid intermediate values, causing proof failures that JS testing can't catch.
 
-compact-zkir-lint detects 11 patterns across three categories:
+compact-zkir-lint detects 17 patterns across four categories:
 
 | Category | Rules | Severity |
 |----------|-------|----------|
 | **Divergence** (DIV-*) | [DIV-001](docs/rules/DIV-001.md) through [DIV-005](docs/rules/DIV-005.md) | error / warn |
 | **Runtime** (RT-*) | [RT-001](docs/rules/RT-001.md) through [RT-004](docs/rules/RT-004.md) | warn / info |
 | **Statistics** (STATS-*) | [STATS-001](docs/rules/STATS-001.md), [STATS-002](docs/rules/STATS-002.md) | info |
+| **Performance** (PERF-*) | [PERF-001](docs/rules/PERF-001.md) through [PERF-006](docs/rules/PERF-006.md) | error / warn / info |
 
 See the [full rules reference](docs/rules/README.md) for details, examples, and fix guidance.
 
@@ -55,7 +59,8 @@ See the [full rules reference](docs/rules/README.md) for details, examples, and 
 
 ## Documentation
 
-- [Rules reference](docs/rules/README.md) — all 11 rules with examples and fix guidance
+- [Rules reference](docs/rules/README.md) — all 17 rules with examples and fix guidance
+- [Circuit profiling](docs/guides/circuit-profiling.md) — estimate proving time per environment
 - [Branchless patterns](docs/guides/branchless-patterns.md) — how to restructure code to avoid divergence
 - [CI integration](docs/guides/ci-integration.md) — SARIF output, GitHub Actions, exit codes
 - [Differential testing](docs/guides/differential-testing.md) — JS vs ZKIR fuzz testing for deeper analysis

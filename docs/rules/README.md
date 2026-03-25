@@ -41,3 +41,18 @@ Report circuit complexity metrics that correlate with divergence risk.
 |------|----------|-----------------|
 | [STATS-001](STATS-001.md) | info | Guard nesting depth >= 4 |
 | [STATS-002](STATS-002.md) | info | Constraint density > 25% |
+
+## Performance Rules (PERF-*)
+
+Estimate proving time and flag circuits that are too large for specific proving environments. Requires `--profile` flag.
+
+| Rule | Severity | What it detects |
+|------|----------|-----------------|
+| [PERF-001](PERF-001.md) | error | Circuit too large for WASM mobile (k >= 16) |
+| [PERF-002](PERF-002.md) | warn | Circuit too large for WASM desktop (k >= 18) |
+| [PERF-003](PERF-003.md) | info | Circuit needs GPU proving (k >= 20) |
+| [PERF-004](PERF-004.md) | warn | Hash operations dominate circuit (> 80% of rows) |
+| [PERF-005](PERF-005.md) | info | Lookup tables inflate circuit k |
+| [PERF-006](PERF-006.md) | error | Circuit exceeds `--max-k` limit |
+
+All thresholds and environment models are configurable via `.zkir-lint.json`. See the [circuit profiling guide](../guides/circuit-profiling.md) for configuration details.

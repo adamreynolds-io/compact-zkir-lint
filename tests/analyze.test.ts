@@ -7,16 +7,16 @@ import { analyzeFile } from "../src/analyze.js";
 const FIXTURES = join(import.meta.dirname, "fixtures/real");
 
 describe("analyzeFile", () => {
-  it("reports tiny-get.zkir as clean", () => {
-    const report = analyzeFile(join(FIXTURES, "tiny-get.zkir"));
+  it("reports tiny-get.zkir as clean", async () => {
+    const report = await analyzeFile(join(FIXTURES, "tiny-get.zkir"));
     expect(report.name).toBe("tiny-get");
     expect(report.version).toBe(2);
     const errors = report.findings.filter(f => f.severity === "error");
     expect(errors).toHaveLength(0);
   });
 
-  it("reports correct stats for tiny-set.zkir", () => {
-    const report = analyzeFile(join(FIXTURES, "tiny-set.zkir"));
+  it("reports correct stats for tiny-set.zkir", async () => {
+    const report = await analyzeFile(join(FIXTURES, "tiny-set.zkir"));
     expect(report.name).toBe("tiny-set");
     expect(report.stats.numInputs).toBe(1);
     expect(report.stats.constrainBitsCount).toBeGreaterThanOrEqual(2);
@@ -24,8 +24,8 @@ describe("analyzeFile", () => {
     expect(errors).toHaveLength(0);
   });
 
-  it("finds DIV-001 in micro-dao-advance.zkir", () => {
-    const report = analyzeFile(join(FIXTURES, "micro-dao-advance.zkir"));
+  it("finds DIV-001 in micro-dao-advance.zkir", async () => {
+    const report = await analyzeFile(join(FIXTURES, "micro-dao-advance.zkir"));
     const errors = report.findings.filter(f => f.severity === "error");
     expect(errors.length).toBeGreaterThanOrEqual(1);
     const div001 = errors.find(f => f.rule === "DIV-001");
@@ -33,8 +33,8 @@ describe("analyzeFile", () => {
     expect(div001!.memoryVar).toBe(28);
   });
 
-  it("finds DIV-001 in micro-dao-cashOut.zkir", () => {
-    const report = analyzeFile(join(FIXTURES, "micro-dao-cashOut.zkir"));
+  it("finds DIV-001 in micro-dao-cashOut.zkir", async () => {
+    const report = await analyzeFile(join(FIXTURES, "micro-dao-cashOut.zkir"));
     const errors = report.findings.filter(f => f.severity === "error");
     expect(errors.length).toBeGreaterThanOrEqual(1);
     const div001 = errors.find(f => f.rule === "DIV-001");
@@ -42,7 +42,7 @@ describe("analyzeFile", () => {
     expect(div001!.memoryVar).toBe(51);
   });
 
-  it("returns PARSE warning for unsupported version", () => {
+  it("returns PARSE warning for unsupported version", async () => {
     const dir = mkdtempSync(join(tmpdir(), "zkir-lint-test-"));
     const file = join(dir, "bad.zkir");
     writeFileSync(file, JSON.stringify({
@@ -50,7 +50,7 @@ describe("analyzeFile", () => {
       instructions: [],
     }));
     try {
-      const report = analyzeFile(file);
+      const report = await analyzeFile(file);
       expect(report.findings).toHaveLength(1);
       expect(report.findings[0]!.rule).toBe("PARSE");
       expect(report.findings[0]!.severity).toBe("warn");
@@ -59,8 +59,8 @@ describe("analyzeFile", () => {
     }
   });
 
-  it("produces complete CircuitReport structure", () => {
-    const report = analyzeFile(join(FIXTURES, "tiny-get.zkir"));
+  it("produces complete CircuitReport structure", async () => {
+    const report = await analyzeFile(join(FIXTURES, "tiny-get.zkir"));
     expect(report).toHaveProperty("file");
     expect(report).toHaveProperty("name");
     expect(report).toHaveProperty("version");

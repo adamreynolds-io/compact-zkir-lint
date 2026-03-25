@@ -2,6 +2,7 @@
  * Output formatters for zkir-lint results.
  */
 
+import { formatDuration, formatEstimateRange } from "./profile.js";
 import type { CircuitReport, ScanSummary } from "./types.js";
 
 export type Format = "text" | "json" | "sarif";
@@ -48,6 +49,31 @@ function formatText(summary: ScanSummary): string {
         `${s.constrainBitsCount} constrain_bits, ${s.condSelectCount} cond_select, ` +
         `${s.guardedRegions} guarded regions (max depth ${s.maxGuardDepth})`,
     );
+
+    // Profile output
+    if (report.profile) {
+      const p = report.profile;
+      const maxKNote = p.maxK != null ? ` | max-k=${p.maxK}` : "";
+      lines.push(
+        `    k=${p.k} (${p.kSource})${maxKNote} | ` +
+          `~${p.rows.toLocaleString()} rows | ` +
+          `${p.tableRows.toLocaleString()} table rows | ` +
+          `${p.hashCount} hashes (${p.hashRows.toLocaleString()} rows)`,
+      );
+      for (const est of p.estimates) {
+        const env = est.environment.padEnd(14);
+        if (!est.feasible) {
+          lines.push(`      ${env} infeasible`);
+        } else {
+          const [lo, hi] = est.estimatedSeconds;
+          const secs = `${Math.round(lo)}s-${Math.round(hi)}s`;
+          const tag =
+            est.verdict === "slow" ? " SLOW" :
+            est.verdict === "ok" ? "" : "";
+          lines.push(`      ${env} ${secs}${tag}`);
+        }
+      }
+    }
 
     // Findings
     for (const f of report.findings) {
@@ -114,6 +140,30 @@ function formatSarif(summary: ScanSummary): string {
     {
       id: "STATS-002",
       shortDescription: { text: "High constraint density" },
+    },
+    {
+      id: "PERF-001",
+      shortDescription: {
+        text: "Circuit too large for WASM mobile proving",
+      },
+    },
+    {
+      id: "PERF-002",
+      shortDescription: {
+        text: "Circuit too large for WASM desktop proving",
+      },
+    },
+    {
+      id: "PERF-003",
+      shortDescription: { text: "Circuit needs GPU proving" },
+    },
+    {
+      id: "PERF-004",
+      shortDescription: { text: "Hash operations dominate circuit" },
+    },
+    {
+      id: "PERF-005",
+      shortDescription: { text: "Lookup tables inflate circuit k" },
     },
   ];
 
