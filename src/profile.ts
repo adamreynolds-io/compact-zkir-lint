@@ -25,7 +25,7 @@ export type TimingEntry = [number, number, number];
 
 /**
  * Data-driven environment model. All fields are JSON-serializable
- * so they can live in .zkir-lint.json.
+ * so they can live in a --profile-config JSON file.
  */
 export interface EnvironmentConfig {
   label: string;

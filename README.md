@@ -9,11 +9,12 @@ npx compact-zkir-lint -r contracts/src/artifacts/
 ```
 
 ```
-  addLiquidity (v2): 5 error(s)
-    ERROR [DIV-001] constrain_bits(bits=64) on arithmetic in conditional branch (guard=824)
-      Fix: move the `as Uint<64>` cast outside the if/else, or use branchless computation.
+  addLiquidity (v2, k=13): 1 error(s)
+    instructions: 343  inputs: 5  constrain_bits: 12  cond_select: 8
+    guarded regions: 3 (max depth 2)  proof payload: ~384KB
+    ERROR [DIV-001] inst 128: constrain_bits(bits=64) on arithmetic in conditional branch (guard=824)
 
-5 error(s) | 4/11 circuits affected
+1 error(s) | 4/11 circuits affected
 ```
 
 ## Install and run

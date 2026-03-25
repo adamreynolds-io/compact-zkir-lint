@@ -4,7 +4,7 @@
 
 ## What it detects
 
-Circuits where the estimated (or exact) k value exceeds the user-defined maximum set via `--max-k` or the `maxK` field in `.zkir-lint.json`.
+Circuits where the estimated (or exact) k value exceeds the user-defined maximum set via `--max-k` or the `maxK` field in `--profile-config`.
 
 ## Why it matters
 
@@ -17,7 +17,7 @@ CLI:
 npx compact-zkir-lint --max-k 14 -r contracts/src/artifacts/
 ```
 
-Config file (`.zkir-lint.json`):
+Profile config (`--profile-config`):
 ```json
 {
   "maxK": 14
