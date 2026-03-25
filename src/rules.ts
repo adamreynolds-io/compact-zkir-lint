@@ -275,13 +275,213 @@ export const unconditionalConstrainEq: Rule = (graph) => {
   return findings;
 };
 
+/**
+ * RT-001: Persistent hash with guarded inputs.
+ *
+ * persistent_hash in ZKIR parses field elements back through alignment,
+ * then converts to binary for hashing. If inputs are from guarded regions
+ * (defaulting to 0), the alignment parsing may produce different binary
+ * than what the JS runtime hashed (which used AlignedValue directly).
+ */
+export const persistentHashGuardedInputs: Rule = (graph) => {
+  const findings: Finding[] = [];
+  const { instructions: insts, varGuard } = graph;
+
+  for (let i = 0; i < insts.length; i++) {
+    const inst = insts[i]!;
+    if (inst.op !== "persistent_hash") continue;
+
+    const inputVars = inst.inputs as number[] | undefined;
+    if (!inputVars) continue;
+
+    const guardedInputs = inputVars.filter((v) => varGuard.has(v));
+    if (guardedInputs.length === 0) continue;
+
+    findings.push({
+      severity: "warn",
+      rule: "RT-001",
+      instructionIndex: i,
+      memoryVar: null,
+      message: `persistent_hash with ${guardedInputs.length} guarded input(s)`,
+      details:
+        `ZKIR re-parses field elements via alignment before hashing. ` +
+        `If guarded inputs default to 0, the alignment parsing may produce ` +
+        `different binary than the JS runtime's direct AlignedValue hashing. ` +
+        `Guarded vars: ${guardedInputs.join(", ")}.`,
+    });
+  }
+
+  return findings;
+};
+
+/**
+ * RT-002: LessThan with guarded operands.
+ *
+ * ZKIR less_than extracts N bits from each operand, then compares the
+ * truncated values. If operands are from guarded regions (default 0),
+ * the bit extraction is safe (0 truncated is 0). But if operands mix
+ * guarded and unguarded values in arithmetic before the comparison,
+ * the truncation may produce unexpected results in dead branches.
+ */
+export const lessThanGuardedOperands: Rule = (graph) => {
+  const findings: Finding[] = [];
+  const isZero = buildZeroAnalysis(graph);
+  const { instructions: insts, varGuard, condSelectOutputs } = graph;
+
+  for (let i = 0; i < insts.length; i++) {
+    const inst = insts[i]!;
+    if (inst.op !== "less_than") continue;
+
+    const a = inst.a as number;
+    const b = inst.b as number;
+    const bits = inst.bits as number | undefined;
+
+    const aGuard = varGuard.get(a);
+    const bGuard = varGuard.get(b);
+    if (aGuard == null && bGuard == null) continue;
+
+    // If both operands are zero-when-guarded, comparison is 0 < 0 = false — safe
+    if (isZero(a) && isZero(b)) continue;
+    // If only one is zero-when-guarded, comparison is 0 < X or X < 0 — may be wrong
+    // but the result is used in cond_select so it just picks the wrong branch value
+    // which is then discarded. Still flag for awareness.
+
+    if (!condSelectOutputs.has(a) || !condSelectOutputs.has(b)) {
+      findings.push({
+        severity: "info",
+        rule: "RT-002",
+        instructionIndex: i,
+        memoryVar: null,
+        message: `less_than(a=var${a}, b=var${b}, bits=${bits}) with guarded operand`,
+        details:
+          `ZKIR less_than extracts ${bits} bits from each operand before comparing. ` +
+          `Guarded operands default to 0 in dead branches. The comparison result ` +
+          `feeds into cond_select, so incorrect results are discarded, but the ` +
+          `bit extraction itself may trigger constraints.`,
+      });
+    }
+  }
+
+  return findings;
+};
+
+/**
+ * RT-003: Transient hash with guarded inputs.
+ *
+ * Similar to RT-001 but for transient_hash. The JS runtime calls
+ * type.toValue() which may truncate trailing zeros (CompactTypeBytes),
+ * while ZKIR receives raw field elements. If guarded inputs produce
+ * different field values than what JS serialized, the hash diverges.
+ */
+export const transientHashGuardedInputs: Rule = (graph) => {
+  const findings: Finding[] = [];
+  const { instructions: insts, varGuard } = graph;
+
+  for (let i = 0; i < insts.length; i++) {
+    const inst = insts[i]!;
+    if (inst.op !== "transient_hash") continue;
+
+    const inputVars = inst.inputs as number[] | undefined;
+    if (!inputVars) continue;
+
+    const guardedInputs = inputVars.filter((v) => varGuard.has(v));
+    if (guardedInputs.length === 0) continue;
+
+    findings.push({
+      severity: "info",
+      rule: "RT-003",
+      instructionIndex: i,
+      memoryVar: null,
+      message: `transient_hash with ${guardedInputs.length} guarded input(s)`,
+      details:
+        `JS runtime calls type.toValue() which may truncate trailing zeros ` +
+        `(CompactTypeBytes.toValue strips trailing 0x00 bytes). ZKIR receives ` +
+        `raw field elements. If guarded inputs default to 0, the hash inputs ` +
+        `may differ between JS and ZKIR.`,
+    });
+  }
+
+  return findings;
+};
+
+/**
+ * RT-004: Field arithmetic on non-normalized values.
+ *
+ * JS field arithmetic (addField, subField, mulField) assumes inputs are
+ * in [0, FIELD_MODULUS). If an intermediate value escapes this range
+ * (e.g., through multiple additions without reduction), JS produces
+ * incorrect results while ZKIR's native Fr handles it correctly.
+ *
+ * Detects: long chains of add/mul without intervening constrain_bits
+ * (which force normalization via bit extraction).
+ */
+export const longArithmeticChain: Rule = (graph) => {
+  const findings: Finding[] = [];
+  const { instructions: insts, instToVar, varToInst, numInputs } = graph;
+
+  // For each constrain_bits target, trace back through arithmetic
+  // and count the chain length
+  for (let i = 0; i < insts.length; i++) {
+    const inst = insts[i]!;
+    if (inst.op !== "constrain_bits") continue;
+
+    const targetVar = inst.var as number;
+    let chainLength = 0;
+    let current = targetVar;
+
+    // Walk backward through arithmetic chain
+    while (chainLength < 20) {
+      const prodIdx = varToInst.get(current);
+      if (prodIdx == null) break;
+      const prod = insts[prodIdx]!;
+      if (
+        prod.op !== "add" &&
+        prod.op !== "mul" &&
+        prod.op !== "neg"
+      ) {
+        break;
+      }
+      chainLength++;
+      // Follow first operand
+      const ops = getOperands(prod);
+      if (ops.length === 0 || ops[0]! < numInputs) break;
+      current = ops[0]!;
+    }
+
+    if (chainLength >= 8) {
+      findings.push({
+        severity: "info",
+        rule: "RT-004",
+        instructionIndex: i,
+        memoryVar: targetVar,
+        message: `constrain_bits after ${chainLength}-deep arithmetic chain`,
+        details:
+          `JS field arithmetic assumes inputs are in [0, FIELD_MODULUS) and ` +
+          `uses single-reduction shortcuts (e.g., addField subtracts modulus once). ` +
+          `Long arithmetic chains without intermediate constraints may accumulate ` +
+          `values that escape this range, causing JS/ZKIR divergence. ` +
+          `ZKIR uses native Fr which handles arbitrary-depth chains correctly.`,
+      });
+    }
+  }
+
+  return findings;
+};
+
 /** All rules in execution order. */
 export const ALL_RULES: Rule[] = [
+  // Divergence rules (JS/ZK mismatch)
   unconditionalConstrainBits,
   unconditionalReconstituteField,
   unconditionalDivMod,
   unconditionalAssert,
   unconditionalConstrainEq,
+  // Runtime divergence rules
+  persistentHashGuardedInputs,
+  lessThanGuardedOperands,
+  transientHashGuardedInputs,
+  longArithmeticChain,
+  // Stats rules
   deepGuardNesting,
   constraintDensity,
 ];
