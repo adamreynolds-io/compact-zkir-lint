@@ -55,4 +55,4 @@ Estimate proving time and flag circuits that are too large for specific proving 
 | [PERF-005](PERF-005.md) | info | Lookup tables inflate circuit k |
 | [PERF-006](PERF-006.md) | error | Circuit exceeds `--max-k` limit |
 
-All thresholds and environment models are configurable via `.zkir-lint.json`. See the [circuit profiling guide](../guides/circuit-profiling.md) for configuration details.
+All thresholds and environment models are configurable via `--profile-config`. See the [circuit profiling guide](../guides/circuit-profiling.md) for configuration details.
