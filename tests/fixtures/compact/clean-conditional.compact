@@ -1,0 +1,16 @@
+pragma language_version >= 0.22.0;
+
+// Clean contract: conditional ledger write, no narrowing cast in branch.
+// Expected: compiles and lints with 0 errors.
+
+ledger counter: Uint<32>;
+
+export circuit increment(amount: Uint<32>): [] {
+  const current = counter;
+  if (disclose(current) + disclose(amount) < 1000) {
+    counter = disclose(current + amount) as Uint<32>;
+  } else {
+    counter = 999;
+  }
+  return [];
+}
