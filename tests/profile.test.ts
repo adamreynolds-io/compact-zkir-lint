@@ -9,7 +9,6 @@ import {
 } from "../src/profile.js";
 import {
   checkWasmKLimit,
-  wasmDesktopLimit,
   gpuRequired,
   hashDominatedCircuit,
   lookupTableInflation,
@@ -122,14 +121,6 @@ describe("PERF rules", () => {
     expect(checkWasmKLimit(16)).not.toBeNull();
     expect(checkWasmKLimit(16)!.rule).toBe("PERF-001");
     expect(checkWasmKLimit(16)!.severity).toBe("warn");
-  });
-
-  it("PERF-002 fires when k >= 18", () => {
-    expect(wasmDesktopLimit(makeProfile({ k: 17 }))).toHaveLength(0);
-    expect(wasmDesktopLimit(makeProfile({ k: 18 }))).toHaveLength(1);
-    expect(wasmDesktopLimit(makeProfile({ k: 18 }))[0]!.severity).toBe(
-      "warn",
-    );
   });
 
   it("PERF-003 fires when k >= 20", () => {

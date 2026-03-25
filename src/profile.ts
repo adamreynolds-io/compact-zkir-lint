@@ -51,15 +51,14 @@ export const DEFAULT_ENVIRONMENTS: Record<string, EnvironmentConfig> = {
   },
   "wasm-desktop": {
     label: "WASM desktop",
-    maxK: 17,
-    warnK: 15,
+    maxK: 15,
+    warnK: 13,
     timings: [
       [10, 0.5, 1],
       [12, 2, 5],
-      [14, 8, 20],
-      [15, 20, 50],
-      [16, 50, 120],
-      [17, 120, 300],
+      [13, 5, 15],
+      [14, 15, 40],
+      [15, 40, 100],
     ],
   },
   docker: {

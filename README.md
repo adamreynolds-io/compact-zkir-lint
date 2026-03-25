@@ -39,7 +39,7 @@ No dependencies on Midnight packages. Reads the `.zkir` JSON files that the comp
 
 In ZK circuits, both branches of an `if/else` execute unconditionally — only the result is selected via `cond_select`. Constraints inside dead branches fire on invalid intermediate values, causing proof failures that JS testing can't catch.
 
-compact-zkir-lint detects 17 patterns across four categories:
+compact-zkir-lint detects 16 patterns across four categories:
 
 | Category | Rules | Severity |
 |----------|-------|----------|

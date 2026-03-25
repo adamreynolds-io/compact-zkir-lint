@@ -158,12 +158,6 @@ function formatSarif(summary: ScanSummary): string {
       },
     },
     {
-      id: "PERF-002",
-      shortDescription: {
-        text: "Circuit too large for WASM desktop proving",
-      },
-    },
-    {
       id: "PERF-003",
       shortDescription: { text: "Circuit needs GPU proving" },
     },

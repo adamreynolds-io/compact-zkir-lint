@@ -535,29 +535,6 @@ export function checkWasmKLimit(k: number): Finding | null {
 }
 
 /**
- * PERF-002: Circuit too large for WASM desktop proving.
- * k >= 18 means the circuit cannot be proved in a desktop browser
- * within acceptable time limits.
- */
-export const wasmDesktopLimit: PerfRule = (profile) => {
-  if (profile.k < 18) return [];
-  return [
-    {
-      severity: "warn",
-      rule: "PERF-002",
-      instructionIndex: -1,
-      memoryVar: null,
-      message: `Circuit k=${profile.k} exceeds WASM desktop limit (k <= 17)`,
-      details:
-        `Desktop WASM proving is single-threaded. ` +
-        `Circuits with k >= 18 (${2 ** profile.k} rows) require ` +
-        `a proof server (Docker or remote GPU). ` +
-        `Curve parameter files at this k are ~500MB+.`,
-    },
-  ];
-};
-
-/**
  * PERF-003: Circuit requires GPU proving.
  * k >= 20 means the circuit is slow on CPU-based Docker proof servers
  * and benefits from GPU acceleration.
@@ -657,7 +634,6 @@ export const maxKExceeded: PerfRule = (profile) => {
 
 export const ALL_PERF_RULES: PerfRule[] = [
   maxKExceeded,
-  wasmDesktopLimit,
   gpuRequired,
   hashDominatedCircuit,
   lookupTableInflation,
