@@ -1,3 +1,11 @@
 node_modules/
 dist/
 *.tsbuildinfo
+.gitnexus
+.claude/skills/
+
+# Benchmark artifacts (regenerate with npm run benchmark:setup)
+bench/benchmark-compiled/
+bench/counter-compiled/
+bench/fixtures/*.bin
+bench/profile.json

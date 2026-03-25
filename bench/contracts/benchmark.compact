@@ -1,0 +1,436 @@
+import CompactStandardLibrary;
+
+// Auto-generated benchmark contract for k=10..20.
+// Each circuit calls persistentHash N times.
+// persistentHash = 704 rows/call in the proving circuit.
+
+export ledger store: Counter;
+
+// Target k=10: 0 hashes
+export circuit bench_k10(): [] {
+  store.increment(1);
+}
+
+// Target k=11: 1 hashes
+export circuit bench_k11(): [] {
+  store.increment(1);
+  const seed = pad(32, "bench");
+  const h0 = persistentHash<Vector<2, Bytes<32>>>([seed, seed]);
+  store.increment(disclose(h0[0]));
+}
+
+// Target k=12: 2 hashes
+export circuit bench_k12(): [] {
+  store.increment(1);
+  const seed = pad(32, "bench");
+  const h0 = persistentHash<Vector<2, Bytes<32>>>([seed, seed]);
+  const h1 = persistentHash<Vector<2, Bytes<32>>>([h0, seed]);
+  store.increment(disclose(h1[0]));
+}
+
+// Target k=13: 5 hashes
+export circuit bench_k13(): [] {
+  store.increment(1);
+  const seed = pad(32, "bench");
+  const h0 = persistentHash<Vector<2, Bytes<32>>>([seed, seed]);
+  const h1 = persistentHash<Vector<2, Bytes<32>>>([h0, seed]);
+  const h2 = persistentHash<Vector<2, Bytes<32>>>([h1, seed]);
+  const h3 = persistentHash<Vector<2, Bytes<32>>>([h2, seed]);
+  const h4 = persistentHash<Vector<2, Bytes<32>>>([h3, seed]);
+  store.increment(disclose(h4[0]));
+}
+
+// Target k=14: 11 hashes
+export circuit bench_k14(): [] {
+  store.increment(1);
+  const seed = pad(32, "bench");
+  const h0 = persistentHash<Vector<2, Bytes<32>>>([seed, seed]);
+  const h1 = persistentHash<Vector<2, Bytes<32>>>([h0, seed]);
+  const h2 = persistentHash<Vector<2, Bytes<32>>>([h1, seed]);
+  const h3 = persistentHash<Vector<2, Bytes<32>>>([h2, seed]);
+  const h4 = persistentHash<Vector<2, Bytes<32>>>([h3, seed]);
+  const h5 = persistentHash<Vector<2, Bytes<32>>>([h4, seed]);
+  const h6 = persistentHash<Vector<2, Bytes<32>>>([h5, seed]);
+  const h7 = persistentHash<Vector<2, Bytes<32>>>([h6, seed]);
+  const h8 = persistentHash<Vector<2, Bytes<32>>>([h7, seed]);
+  const h9 = persistentHash<Vector<2, Bytes<32>>>([h8, seed]);
+  const h10 = persistentHash<Vector<2, Bytes<32>>>([h9, seed]);
+  store.increment(disclose(h10[0]));
+}
+
+// Target k=15: 23 hashes
+export circuit bench_k15(): [] {
+  store.increment(1);
+  const seed = pad(32, "bench");
+  const h0 = persistentHash<Vector<2, Bytes<32>>>([seed, seed]);
+  const h1 = persistentHash<Vector<2, Bytes<32>>>([h0, seed]);
+  const h2 = persistentHash<Vector<2, Bytes<32>>>([h1, seed]);
+  const h3 = persistentHash<Vector<2, Bytes<32>>>([h2, seed]);
+  const h4 = persistentHash<Vector<2, Bytes<32>>>([h3, seed]);
+  const h5 = persistentHash<Vector<2, Bytes<32>>>([h4, seed]);
+  const h6 = persistentHash<Vector<2, Bytes<32>>>([h5, seed]);
+  const h7 = persistentHash<Vector<2, Bytes<32>>>([h6, seed]);
+  const h8 = persistentHash<Vector<2, Bytes<32>>>([h7, seed]);
+  const h9 = persistentHash<Vector<2, Bytes<32>>>([h8, seed]);
+  const h10 = persistentHash<Vector<2, Bytes<32>>>([h9, seed]);
+  const h11 = persistentHash<Vector<2, Bytes<32>>>([h10, seed]);
+  const h12 = persistentHash<Vector<2, Bytes<32>>>([h11, seed]);
+  const h13 = persistentHash<Vector<2, Bytes<32>>>([h12, seed]);
+  const h14 = persistentHash<Vector<2, Bytes<32>>>([h13, seed]);
+  const h15 = persistentHash<Vector<2, Bytes<32>>>([h14, seed]);
+  const h16 = persistentHash<Vector<2, Bytes<32>>>([h15, seed]);
+  const h17 = persistentHash<Vector<2, Bytes<32>>>([h16, seed]);
+  const h18 = persistentHash<Vector<2, Bytes<32>>>([h17, seed]);
+  const h19 = persistentHash<Vector<2, Bytes<32>>>([h18, seed]);
+  const h20 = persistentHash<Vector<2, Bytes<32>>>([h19, seed]);
+  const h21 = persistentHash<Vector<2, Bytes<32>>>([h20, seed]);
+  const h22 = persistentHash<Vector<2, Bytes<32>>>([h21, seed]);
+  store.increment(disclose(h22[0]));
+}
+
+// Target k=16: 46 hashes
+export circuit bench_k16(): [] {
+  store.increment(1);
+  const seed = pad(32, "bench");
+  const h0 = persistentHash<Vector<2, Bytes<32>>>([seed, seed]);
+  const h1 = persistentHash<Vector<2, Bytes<32>>>([h0, seed]);
+  const h2 = persistentHash<Vector<2, Bytes<32>>>([h1, seed]);
+  const h3 = persistentHash<Vector<2, Bytes<32>>>([h2, seed]);
+  const h4 = persistentHash<Vector<2, Bytes<32>>>([h3, seed]);
+  const h5 = persistentHash<Vector<2, Bytes<32>>>([h4, seed]);
+  const h6 = persistentHash<Vector<2, Bytes<32>>>([h5, seed]);
+  const h7 = persistentHash<Vector<2, Bytes<32>>>([h6, seed]);
+  const h8 = persistentHash<Vector<2, Bytes<32>>>([h7, seed]);
+  const h9 = persistentHash<Vector<2, Bytes<32>>>([h8, seed]);
+  const h10 = persistentHash<Vector<2, Bytes<32>>>([h9, seed]);
+  const h11 = persistentHash<Vector<2, Bytes<32>>>([h10, seed]);
+  const h12 = persistentHash<Vector<2, Bytes<32>>>([h11, seed]);
+  const h13 = persistentHash<Vector<2, Bytes<32>>>([h12, seed]);
+  const h14 = persistentHash<Vector<2, Bytes<32>>>([h13, seed]);
+  const h15 = persistentHash<Vector<2, Bytes<32>>>([h14, seed]);
+  const h16 = persistentHash<Vector<2, Bytes<32>>>([h15, seed]);
+  const h17 = persistentHash<Vector<2, Bytes<32>>>([h16, seed]);
+  const h18 = persistentHash<Vector<2, Bytes<32>>>([h17, seed]);
+  const h19 = persistentHash<Vector<2, Bytes<32>>>([h18, seed]);
+  const h20 = persistentHash<Vector<2, Bytes<32>>>([h19, seed]);
+  const h21 = persistentHash<Vector<2, Bytes<32>>>([h20, seed]);
+  const h22 = persistentHash<Vector<2, Bytes<32>>>([h21, seed]);
+  const h23 = persistentHash<Vector<2, Bytes<32>>>([h22, seed]);
+  const h24 = persistentHash<Vector<2, Bytes<32>>>([h23, seed]);
+  const h25 = persistentHash<Vector<2, Bytes<32>>>([h24, seed]);
+  const h26 = persistentHash<Vector<2, Bytes<32>>>([h25, seed]);
+  const h27 = persistentHash<Vector<2, Bytes<32>>>([h26, seed]);
+  const h28 = persistentHash<Vector<2, Bytes<32>>>([h27, seed]);
+  const h29 = persistentHash<Vector<2, Bytes<32>>>([h28, seed]);
+  const h30 = persistentHash<Vector<2, Bytes<32>>>([h29, seed]);
+  const h31 = persistentHash<Vector<2, Bytes<32>>>([h30, seed]);
+  const h32 = persistentHash<Vector<2, Bytes<32>>>([h31, seed]);
+  const h33 = persistentHash<Vector<2, Bytes<32>>>([h32, seed]);
+  const h34 = persistentHash<Vector<2, Bytes<32>>>([h33, seed]);
+  const h35 = persistentHash<Vector<2, Bytes<32>>>([h34, seed]);
+  const h36 = persistentHash<Vector<2, Bytes<32>>>([h35, seed]);
+  const h37 = persistentHash<Vector<2, Bytes<32>>>([h36, seed]);
+  const h38 = persistentHash<Vector<2, Bytes<32>>>([h37, seed]);
+  const h39 = persistentHash<Vector<2, Bytes<32>>>([h38, seed]);
+  const h40 = persistentHash<Vector<2, Bytes<32>>>([h39, seed]);
+  const h41 = persistentHash<Vector<2, Bytes<32>>>([h40, seed]);
+  const h42 = persistentHash<Vector<2, Bytes<32>>>([h41, seed]);
+  const h43 = persistentHash<Vector<2, Bytes<32>>>([h42, seed]);
+  const h44 = persistentHash<Vector<2, Bytes<32>>>([h43, seed]);
+  const h45 = persistentHash<Vector<2, Bytes<32>>>([h44, seed]);
+  store.increment(disclose(h45[0]));
+}
+
+// Target k=17: 93 hashes
+export circuit bench_k17(): [] {
+  store.increment(1);
+  const seed = pad(32, "bench");
+  const h0 = persistentHash<Vector<2, Bytes<32>>>([seed, seed]);
+  const h1 = persistentHash<Vector<2, Bytes<32>>>([h0, seed]);
+  const h2 = persistentHash<Vector<2, Bytes<32>>>([h1, seed]);
+  const h3 = persistentHash<Vector<2, Bytes<32>>>([h2, seed]);
+  const h4 = persistentHash<Vector<2, Bytes<32>>>([h3, seed]);
+  const h5 = persistentHash<Vector<2, Bytes<32>>>([h4, seed]);
+  const h6 = persistentHash<Vector<2, Bytes<32>>>([h5, seed]);
+  const h7 = persistentHash<Vector<2, Bytes<32>>>([h6, seed]);
+  const h8 = persistentHash<Vector<2, Bytes<32>>>([h7, seed]);
+  const h9 = persistentHash<Vector<2, Bytes<32>>>([h8, seed]);
+  const h10 = persistentHash<Vector<2, Bytes<32>>>([h9, seed]);
+  const h11 = persistentHash<Vector<2, Bytes<32>>>([h10, seed]);
+  const h12 = persistentHash<Vector<2, Bytes<32>>>([h11, seed]);
+  const h13 = persistentHash<Vector<2, Bytes<32>>>([h12, seed]);
+  const h14 = persistentHash<Vector<2, Bytes<32>>>([h13, seed]);
+  const h15 = persistentHash<Vector<2, Bytes<32>>>([h14, seed]);
+  const h16 = persistentHash<Vector<2, Bytes<32>>>([h15, seed]);
+  const h17 = persistentHash<Vector<2, Bytes<32>>>([h16, seed]);
+  const h18 = persistentHash<Vector<2, Bytes<32>>>([h17, seed]);
+  const h19 = persistentHash<Vector<2, Bytes<32>>>([h18, seed]);
+  const h20 = persistentHash<Vector<2, Bytes<32>>>([h19, seed]);
+  const h21 = persistentHash<Vector<2, Bytes<32>>>([h20, seed]);
+  const h22 = persistentHash<Vector<2, Bytes<32>>>([h21, seed]);
+  const h23 = persistentHash<Vector<2, Bytes<32>>>([h22, seed]);
+  const h24 = persistentHash<Vector<2, Bytes<32>>>([h23, seed]);
+  const h25 = persistentHash<Vector<2, Bytes<32>>>([h24, seed]);
+  const h26 = persistentHash<Vector<2, Bytes<32>>>([h25, seed]);
+  const h27 = persistentHash<Vector<2, Bytes<32>>>([h26, seed]);
+  const h28 = persistentHash<Vector<2, Bytes<32>>>([h27, seed]);
+  const h29 = persistentHash<Vector<2, Bytes<32>>>([h28, seed]);
+  const h30 = persistentHash<Vector<2, Bytes<32>>>([h29, seed]);
+  const h31 = persistentHash<Vector<2, Bytes<32>>>([h30, seed]);
+  const h32 = persistentHash<Vector<2, Bytes<32>>>([h31, seed]);
+  const h33 = persistentHash<Vector<2, Bytes<32>>>([h32, seed]);
+  const h34 = persistentHash<Vector<2, Bytes<32>>>([h33, seed]);
+  const h35 = persistentHash<Vector<2, Bytes<32>>>([h34, seed]);
+  const h36 = persistentHash<Vector<2, Bytes<32>>>([h35, seed]);
+  const h37 = persistentHash<Vector<2, Bytes<32>>>([h36, seed]);
+  const h38 = persistentHash<Vector<2, Bytes<32>>>([h37, seed]);
+  const h39 = persistentHash<Vector<2, Bytes<32>>>([h38, seed]);
+  const h40 = persistentHash<Vector<2, Bytes<32>>>([h39, seed]);
+  const h41 = persistentHash<Vector<2, Bytes<32>>>([h40, seed]);
+  const h42 = persistentHash<Vector<2, Bytes<32>>>([h41, seed]);
+  const h43 = persistentHash<Vector<2, Bytes<32>>>([h42, seed]);
+  const h44 = persistentHash<Vector<2, Bytes<32>>>([h43, seed]);
+  const h45 = persistentHash<Vector<2, Bytes<32>>>([h44, seed]);
+  const h46 = persistentHash<Vector<2, Bytes<32>>>([h45, seed]);
+  const h47 = persistentHash<Vector<2, Bytes<32>>>([h46, seed]);
+  const h48 = persistentHash<Vector<2, Bytes<32>>>([h47, seed]);
+  const h49 = persistentHash<Vector<2, Bytes<32>>>([h48, seed]);
+  const h50 = persistentHash<Vector<2, Bytes<32>>>([h49, seed]);
+  const h51 = persistentHash<Vector<2, Bytes<32>>>([h50, seed]);
+  const h52 = persistentHash<Vector<2, Bytes<32>>>([h51, seed]);
+  const h53 = persistentHash<Vector<2, Bytes<32>>>([h52, seed]);
+  const h54 = persistentHash<Vector<2, Bytes<32>>>([h53, seed]);
+  const h55 = persistentHash<Vector<2, Bytes<32>>>([h54, seed]);
+  const h56 = persistentHash<Vector<2, Bytes<32>>>([h55, seed]);
+  const h57 = persistentHash<Vector<2, Bytes<32>>>([h56, seed]);
+  const h58 = persistentHash<Vector<2, Bytes<32>>>([h57, seed]);
+  const h59 = persistentHash<Vector<2, Bytes<32>>>([h58, seed]);
+  const h60 = persistentHash<Vector<2, Bytes<32>>>([h59, seed]);
+  const h61 = persistentHash<Vector<2, Bytes<32>>>([h60, seed]);
+  const h62 = persistentHash<Vector<2, Bytes<32>>>([h61, seed]);
+  const h63 = persistentHash<Vector<2, Bytes<32>>>([h62, seed]);
+  const h64 = persistentHash<Vector<2, Bytes<32>>>([h63, seed]);
+  const h65 = persistentHash<Vector<2, Bytes<32>>>([h64, seed]);
+  const h66 = persistentHash<Vector<2, Bytes<32>>>([h65, seed]);
+  const h67 = persistentHash<Vector<2, Bytes<32>>>([h66, seed]);
+  const h68 = persistentHash<Vector<2, Bytes<32>>>([h67, seed]);
+  const h69 = persistentHash<Vector<2, Bytes<32>>>([h68, seed]);
+  const h70 = persistentHash<Vector<2, Bytes<32>>>([h69, seed]);
+  const h71 = persistentHash<Vector<2, Bytes<32>>>([h70, seed]);
+  const h72 = persistentHash<Vector<2, Bytes<32>>>([h71, seed]);
+  const h73 = persistentHash<Vector<2, Bytes<32>>>([h72, seed]);
+  const h74 = persistentHash<Vector<2, Bytes<32>>>([h73, seed]);
+  const h75 = persistentHash<Vector<2, Bytes<32>>>([h74, seed]);
+  const h76 = persistentHash<Vector<2, Bytes<32>>>([h75, seed]);
+  const h77 = persistentHash<Vector<2, Bytes<32>>>([h76, seed]);
+  const h78 = persistentHash<Vector<2, Bytes<32>>>([h77, seed]);
+  const h79 = persistentHash<Vector<2, Bytes<32>>>([h78, seed]);
+  const h80 = persistentHash<Vector<2, Bytes<32>>>([h79, seed]);
+  const h81 = persistentHash<Vector<2, Bytes<32>>>([h80, seed]);
+  const h82 = persistentHash<Vector<2, Bytes<32>>>([h81, seed]);
+  const h83 = persistentHash<Vector<2, Bytes<32>>>([h82, seed]);
+  const h84 = persistentHash<Vector<2, Bytes<32>>>([h83, seed]);
+  const h85 = persistentHash<Vector<2, Bytes<32>>>([h84, seed]);
+  const h86 = persistentHash<Vector<2, Bytes<32>>>([h85, seed]);
+  const h87 = persistentHash<Vector<2, Bytes<32>>>([h86, seed]);
+  const h88 = persistentHash<Vector<2, Bytes<32>>>([h87, seed]);
+  const h89 = persistentHash<Vector<2, Bytes<32>>>([h88, seed]);
+  const h90 = persistentHash<Vector<2, Bytes<32>>>([h89, seed]);
+  const h91 = persistentHash<Vector<2, Bytes<32>>>([h90, seed]);
+  const h92 = persistentHash<Vector<2, Bytes<32>>>([h91, seed]);
+  store.increment(disclose(h92[0]));
+}
+
+// Target k=18: 186 hashes
+export circuit bench_k18(): [] {
+  store.increment(1);
+  const seed = pad(32, "bench");
+  const h0 = persistentHash<Vector<2, Bytes<32>>>([seed, seed]);
+  const h1 = persistentHash<Vector<2, Bytes<32>>>([h0, seed]);
+  const h2 = persistentHash<Vector<2, Bytes<32>>>([h1, seed]);
+  const h3 = persistentHash<Vector<2, Bytes<32>>>([h2, seed]);
+  const h4 = persistentHash<Vector<2, Bytes<32>>>([h3, seed]);
+  const h5 = persistentHash<Vector<2, Bytes<32>>>([h4, seed]);
+  const h6 = persistentHash<Vector<2, Bytes<32>>>([h5, seed]);
+  const h7 = persistentHash<Vector<2, Bytes<32>>>([h6, seed]);
+  const h8 = persistentHash<Vector<2, Bytes<32>>>([h7, seed]);
+  const h9 = persistentHash<Vector<2, Bytes<32>>>([h8, seed]);
+  const h10 = persistentHash<Vector<2, Bytes<32>>>([h9, seed]);
+  const h11 = persistentHash<Vector<2, Bytes<32>>>([h10, seed]);
+  const h12 = persistentHash<Vector<2, Bytes<32>>>([h11, seed]);
+  const h13 = persistentHash<Vector<2, Bytes<32>>>([h12, seed]);
+  const h14 = persistentHash<Vector<2, Bytes<32>>>([h13, seed]);
+  const h15 = persistentHash<Vector<2, Bytes<32>>>([h14, seed]);
+  const h16 = persistentHash<Vector<2, Bytes<32>>>([h15, seed]);
+  const h17 = persistentHash<Vector<2, Bytes<32>>>([h16, seed]);
+  const h18 = persistentHash<Vector<2, Bytes<32>>>([h17, seed]);
+  const h19 = persistentHash<Vector<2, Bytes<32>>>([h18, seed]);
+  const h20 = persistentHash<Vector<2, Bytes<32>>>([h19, seed]);
+  const h21 = persistentHash<Vector<2, Bytes<32>>>([h20, seed]);
+  const h22 = persistentHash<Vector<2, Bytes<32>>>([h21, seed]);
+  const h23 = persistentHash<Vector<2, Bytes<32>>>([h22, seed]);
+  const h24 = persistentHash<Vector<2, Bytes<32>>>([h23, seed]);
+  const h25 = persistentHash<Vector<2, Bytes<32>>>([h24, seed]);
+  const h26 = persistentHash<Vector<2, Bytes<32>>>([h25, seed]);
+  const h27 = persistentHash<Vector<2, Bytes<32>>>([h26, seed]);
+  const h28 = persistentHash<Vector<2, Bytes<32>>>([h27, seed]);
+  const h29 = persistentHash<Vector<2, Bytes<32>>>([h28, seed]);
+  const h30 = persistentHash<Vector<2, Bytes<32>>>([h29, seed]);
+  const h31 = persistentHash<Vector<2, Bytes<32>>>([h30, seed]);
+  const h32 = persistentHash<Vector<2, Bytes<32>>>([h31, seed]);
+  const h33 = persistentHash<Vector<2, Bytes<32>>>([h32, seed]);
+  const h34 = persistentHash<Vector<2, Bytes<32>>>([h33, seed]);
+  const h35 = persistentHash<Vector<2, Bytes<32>>>([h34, seed]);
+  const h36 = persistentHash<Vector<2, Bytes<32>>>([h35, seed]);
+  const h37 = persistentHash<Vector<2, Bytes<32>>>([h36, seed]);
+  const h38 = persistentHash<Vector<2, Bytes<32>>>([h37, seed]);
+  const h39 = persistentHash<Vector<2, Bytes<32>>>([h38, seed]);
+  const h40 = persistentHash<Vector<2, Bytes<32>>>([h39, seed]);
+  const h41 = persistentHash<Vector<2, Bytes<32>>>([h40, seed]);
+  const h42 = persistentHash<Vector<2, Bytes<32>>>([h41, seed]);
+  const h43 = persistentHash<Vector<2, Bytes<32>>>([h42, seed]);
+  const h44 = persistentHash<Vector<2, Bytes<32>>>([h43, seed]);
+  const h45 = persistentHash<Vector<2, Bytes<32>>>([h44, seed]);
+  const h46 = persistentHash<Vector<2, Bytes<32>>>([h45, seed]);
+  const h47 = persistentHash<Vector<2, Bytes<32>>>([h46, seed]);
+  const h48 = persistentHash<Vector<2, Bytes<32>>>([h47, seed]);
+  const h49 = persistentHash<Vector<2, Bytes<32>>>([h48, seed]);
+  const h50 = persistentHash<Vector<2, Bytes<32>>>([h49, seed]);
+  const h51 = persistentHash<Vector<2, Bytes<32>>>([h50, seed]);
+  const h52 = persistentHash<Vector<2, Bytes<32>>>([h51, seed]);
+  const h53 = persistentHash<Vector<2, Bytes<32>>>([h52, seed]);
+  const h54 = persistentHash<Vector<2, Bytes<32>>>([h53, seed]);
+  const h55 = persistentHash<Vector<2, Bytes<32>>>([h54, seed]);
+  const h56 = persistentHash<Vector<2, Bytes<32>>>([h55, seed]);
+  const h57 = persistentHash<Vector<2, Bytes<32>>>([h56, seed]);
+  const h58 = persistentHash<Vector<2, Bytes<32>>>([h57, seed]);
+  const h59 = persistentHash<Vector<2, Bytes<32>>>([h58, seed]);
+  const h60 = persistentHash<Vector<2, Bytes<32>>>([h59, seed]);
+  const h61 = persistentHash<Vector<2, Bytes<32>>>([h60, seed]);
+  const h62 = persistentHash<Vector<2, Bytes<32>>>([h61, seed]);
+  const h63 = persistentHash<Vector<2, Bytes<32>>>([h62, seed]);
+  const h64 = persistentHash<Vector<2, Bytes<32>>>([h63, seed]);
+  const h65 = persistentHash<Vector<2, Bytes<32>>>([h64, seed]);
+  const h66 = persistentHash<Vector<2, Bytes<32>>>([h65, seed]);
+  const h67 = persistentHash<Vector<2, Bytes<32>>>([h66, seed]);
+  const h68 = persistentHash<Vector<2, Bytes<32>>>([h67, seed]);
+  const h69 = persistentHash<Vector<2, Bytes<32>>>([h68, seed]);
+  const h70 = persistentHash<Vector<2, Bytes<32>>>([h69, seed]);
+  const h71 = persistentHash<Vector<2, Bytes<32>>>([h70, seed]);
+  const h72 = persistentHash<Vector<2, Bytes<32>>>([h71, seed]);
+  const h73 = persistentHash<Vector<2, Bytes<32>>>([h72, seed]);
+  const h74 = persistentHash<Vector<2, Bytes<32>>>([h73, seed]);
+  const h75 = persistentHash<Vector<2, Bytes<32>>>([h74, seed]);
+  const h76 = persistentHash<Vector<2, Bytes<32>>>([h75, seed]);
+  const h77 = persistentHash<Vector<2, Bytes<32>>>([h76, seed]);
+  const h78 = persistentHash<Vector<2, Bytes<32>>>([h77, seed]);
+  const h79 = persistentHash<Vector<2, Bytes<32>>>([h78, seed]);
+  const h80 = persistentHash<Vector<2, Bytes<32>>>([h79, seed]);
+  const h81 = persistentHash<Vector<2, Bytes<32>>>([h80, seed]);
+  const h82 = persistentHash<Vector<2, Bytes<32>>>([h81, seed]);
+  const h83 = persistentHash<Vector<2, Bytes<32>>>([h82, seed]);
+  const h84 = persistentHash<Vector<2, Bytes<32>>>([h83, seed]);
+  const h85 = persistentHash<Vector<2, Bytes<32>>>([h84, seed]);
+  const h86 = persistentHash<Vector<2, Bytes<32>>>([h85, seed]);
+  const h87 = persistentHash<Vector<2, Bytes<32>>>([h86, seed]);
+  const h88 = persistentHash<Vector<2, Bytes<32>>>([h87, seed]);
+  const h89 = persistentHash<Vector<2, Bytes<32>>>([h88, seed]);
+  const h90 = persistentHash<Vector<2, Bytes<32>>>([h89, seed]);
+  const h91 = persistentHash<Vector<2, Bytes<32>>>([h90, seed]);
+  const h92 = persistentHash<Vector<2, Bytes<32>>>([h91, seed]);
+  const h93 = persistentHash<Vector<2, Bytes<32>>>([h92, seed]);
+  const h94 = persistentHash<Vector<2, Bytes<32>>>([h93, seed]);
+  const h95 = persistentHash<Vector<2, Bytes<32>>>([h94, seed]);
+  const h96 = persistentHash<Vector<2, Bytes<32>>>([h95, seed]);
+  const h97 = persistentHash<Vector<2, Bytes<32>>>([h96, seed]);
+  const h98 = persistentHash<Vector<2, Bytes<32>>>([h97, seed]);
+  const h99 = persistentHash<Vector<2, Bytes<32>>>([h98, seed]);
+  const h100 = persistentHash<Vector<2, Bytes<32>>>([h99, seed]);
+  const h101 = persistentHash<Vector<2, Bytes<32>>>([h100, seed]);
+  const h102 = persistentHash<Vector<2, Bytes<32>>>([h101, seed]);
+  const h103 = persistentHash<Vector<2, Bytes<32>>>([h102, seed]);
+  const h104 = persistentHash<Vector<2, Bytes<32>>>([h103, seed]);
+  const h105 = persistentHash<Vector<2, Bytes<32>>>([h104, seed]);
+  const h106 = persistentHash<Vector<2, Bytes<32>>>([h105, seed]);
+  const h107 = persistentHash<Vector<2, Bytes<32>>>([h106, seed]);
+  const h108 = persistentHash<Vector<2, Bytes<32>>>([h107, seed]);
+  const h109 = persistentHash<Vector<2, Bytes<32>>>([h108, seed]);
+  const h110 = persistentHash<Vector<2, Bytes<32>>>([h109, seed]);
+  const h111 = persistentHash<Vector<2, Bytes<32>>>([h110, seed]);
+  const h112 = persistentHash<Vector<2, Bytes<32>>>([h111, seed]);
+  const h113 = persistentHash<Vector<2, Bytes<32>>>([h112, seed]);
+  const h114 = persistentHash<Vector<2, Bytes<32>>>([h113, seed]);
+  const h115 = persistentHash<Vector<2, Bytes<32>>>([h114, seed]);
+  const h116 = persistentHash<Vector<2, Bytes<32>>>([h115, seed]);
+  const h117 = persistentHash<Vector<2, Bytes<32>>>([h116, seed]);
+  const h118 = persistentHash<Vector<2, Bytes<32>>>([h117, seed]);
+  const h119 = persistentHash<Vector<2, Bytes<32>>>([h118, seed]);
+  const h120 = persistentHash<Vector<2, Bytes<32>>>([h119, seed]);
+  const h121 = persistentHash<Vector<2, Bytes<32>>>([h120, seed]);
+  const h122 = persistentHash<Vector<2, Bytes<32>>>([h121, seed]);
+  const h123 = persistentHash<Vector<2, Bytes<32>>>([h122, seed]);
+  const h124 = persistentHash<Vector<2, Bytes<32>>>([h123, seed]);
+  const h125 = persistentHash<Vector<2, Bytes<32>>>([h124, seed]);
+  const h126 = persistentHash<Vector<2, Bytes<32>>>([h125, seed]);
+  const h127 = persistentHash<Vector<2, Bytes<32>>>([h126, seed]);
+  const h128 = persistentHash<Vector<2, Bytes<32>>>([h127, seed]);
+  const h129 = persistentHash<Vector<2, Bytes<32>>>([h128, seed]);
+  const h130 = persistentHash<Vector<2, Bytes<32>>>([h129, seed]);
+  const h131 = persistentHash<Vector<2, Bytes<32>>>([h130, seed]);
+  const h132 = persistentHash<Vector<2, Bytes<32>>>([h131, seed]);
+  const h133 = persistentHash<Vector<2, Bytes<32>>>([h132, seed]);
+  const h134 = persistentHash<Vector<2, Bytes<32>>>([h133, seed]);
+  const h135 = persistentHash<Vector<2, Bytes<32>>>([h134, seed]);
+  const h136 = persistentHash<Vector<2, Bytes<32>>>([h135, seed]);
+  const h137 = persistentHash<Vector<2, Bytes<32>>>([h136, seed]);
+  const h138 = persistentHash<Vector<2, Bytes<32>>>([h137, seed]);
+  const h139 = persistentHash<Vector<2, Bytes<32>>>([h138, seed]);
+  const h140 = persistentHash<Vector<2, Bytes<32>>>([h139, seed]);
+  const h141 = persistentHash<Vector<2, Bytes<32>>>([h140, seed]);
+  const h142 = persistentHash<Vector<2, Bytes<32>>>([h141, seed]);
+  const h143 = persistentHash<Vector<2, Bytes<32>>>([h142, seed]);
+  const h144 = persistentHash<Vector<2, Bytes<32>>>([h143, seed]);
+  const h145 = persistentHash<Vector<2, Bytes<32>>>([h144, seed]);
+  const h146 = persistentHash<Vector<2, Bytes<32>>>([h145, seed]);
+  const h147 = persistentHash<Vector<2, Bytes<32>>>([h146, seed]);
+  const h148 = persistentHash<Vector<2, Bytes<32>>>([h147, seed]);
+  const h149 = persistentHash<Vector<2, Bytes<32>>>([h148, seed]);
+  const h150 = persistentHash<Vector<2, Bytes<32>>>([h149, seed]);
+  const h151 = persistentHash<Vector<2, Bytes<32>>>([h150, seed]);
+  const h152 = persistentHash<Vector<2, Bytes<32>>>([h151, seed]);
+  const h153 = persistentHash<Vector<2, Bytes<32>>>([h152, seed]);
+  const h154 = persistentHash<Vector<2, Bytes<32>>>([h153, seed]);
+  const h155 = persistentHash<Vector<2, Bytes<32>>>([h154, seed]);
+  const h156 = persistentHash<Vector<2, Bytes<32>>>([h155, seed]);
+  const h157 = persistentHash<Vector<2, Bytes<32>>>([h156, seed]);
+  const h158 = persistentHash<Vector<2, Bytes<32>>>([h157, seed]);
+  const h159 = persistentHash<Vector<2, Bytes<32>>>([h158, seed]);
+  const h160 = persistentHash<Vector<2, Bytes<32>>>([h159, seed]);
+  const h161 = persistentHash<Vector<2, Bytes<32>>>([h160, seed]);
+  const h162 = persistentHash<Vector<2, Bytes<32>>>([h161, seed]);
+  const h163 = persistentHash<Vector<2, Bytes<32>>>([h162, seed]);
+  const h164 = persistentHash<Vector<2, Bytes<32>>>([h163, seed]);
+  const h165 = persistentHash<Vector<2, Bytes<32>>>([h164, seed]);
+  const h166 = persistentHash<Vector<2, Bytes<32>>>([h165, seed]);
+  const h167 = persistentHash<Vector<2, Bytes<32>>>([h166, seed]);
+  const h168 = persistentHash<Vector<2, Bytes<32>>>([h167, seed]);
+  const h169 = persistentHash<Vector<2, Bytes<32>>>([h168, seed]);
+  const h170 = persistentHash<Vector<2, Bytes<32>>>([h169, seed]);
+  const h171 = persistentHash<Vector<2, Bytes<32>>>([h170, seed]);
+  const h172 = persistentHash<Vector<2, Bytes<32>>>([h171, seed]);
+  const h173 = persistentHash<Vector<2, Bytes<32>>>([h172, seed]);
+  const h174 = persistentHash<Vector<2, Bytes<32>>>([h173, seed]);
+  const h175 = persistentHash<Vector<2, Bytes<32>>>([h174, seed]);
+  const h176 = persistentHash<Vector<2, Bytes<32>>>([h175, seed]);
+  const h177 = persistentHash<Vector<2, Bytes<32>>>([h176, seed]);
+  const h178 = persistentHash<Vector<2, Bytes<32>>>([h177, seed]);
+  const h179 = persistentHash<Vector<2, Bytes<32>>>([h178, seed]);
+  const h180 = persistentHash<Vector<2, Bytes<32>>>([h179, seed]);
+  const h181 = persistentHash<Vector<2, Bytes<32>>>([h180, seed]);
+  const h182 = persistentHash<Vector<2, Bytes<32>>>([h181, seed]);
+  const h183 = persistentHash<Vector<2, Bytes<32>>>([h182, seed]);
+  const h184 = persistentHash<Vector<2, Bytes<32>>>([h183, seed]);
+  const h185 = persistentHash<Vector<2, Bytes<32>>>([h184, seed]);
+  store.increment(disclose(h185[0]));
+}
+

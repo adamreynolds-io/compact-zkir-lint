@@ -83,6 +83,7 @@ Options:
   --severity error|warn|info Minimum severity to report (default: warn)
   -r, --recursive            Scan directories recursively for .zkir files
   --profile                  Enable circuit performance profiling
+  --profile-config <path>    Load profiling config (environments, timings)
   --max-k <number>           Maximum acceptable k value (error if exceeded)
   --target <env>             Proving target (repeatable): wasm-mobile,
                              wasm-desktop, docker, gpu (default: all)
@@ -102,7 +103,7 @@ Rules:
   RT-004     deep arithmetic chain
   STATS-001  Deep guard nesting (>= 4 levels)
   STATS-002  High constraint density (> 25%)
-  PERF-001   Circuit too large for WASM mobile (k >= 16)
+  PERF-001   Circuit exceeds WASM prover limit (k > 15)
   PERF-002   Circuit too large for WASM desktop (k >= 18)
   PERF-003   Circuit needs GPU proving (k >= 20)
   PERF-004   Hash operations dominate circuit size
@@ -113,7 +114,7 @@ Examples:
   zkir-lint circuit.zkir
   zkir-lint -r contracts/src/artifacts/
   zkir-lint --profile -r contracts/src/artifacts/
-  zkir-lint --profile --target wasm-mobile *.zkir
+  zkir-lint --profile --profile-config my-profile.json *.zkir
   zkir-lint --profile --max-k 14 -r contracts/src/artifacts/
   zkir-lint --format sarif -r . > results.sarif`);
 }
@@ -128,6 +129,7 @@ async function main() {
   let maxK: number | undefined;
   const targets: ProvingTarget[] = [];
   let kSource: "estimate" | "wasm" | "auto" = "auto";
+  let profileConfigPath: string | undefined;
   const paths: string[] = [];
 
   for (let i = 0; i < args.length; i++) {
@@ -144,6 +146,10 @@ async function main() {
         recursive = true;
         break;
       case "--profile":
+        profile = true;
+        break;
+      case "--profile-config":
+        profileConfigPath = args[++i];
         profile = true;
         break;
       case "--max-k": {
@@ -195,8 +201,8 @@ async function main() {
     }
   }
 
-  // Load config file (.zkir-lint.json) — CLI flags override config values
-  const config = loadConfig();
+  // Load profile config if specified — CLI flags override config values
+  const config = loadConfig(profileConfigPath);
   if (config.maxK != null && maxK == null) maxK = config.maxK;
   if (config.profile && !profile) profile = config.profile;
   if (config.targets && targets.length === 0) {

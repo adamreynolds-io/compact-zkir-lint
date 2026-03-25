@@ -1,0 +1,12 @@
+{
+  "k": 17,
+  "circuit": "bench_k17",
+  "contract": "benchmark",
+  "rows": 66222,
+  "tableRows": 2,
+  "hashes": 93,
+  "instructions": 121,
+  "payloadBytes": 152635176,
+  "sdkVersion": "8.0.3",
+  "recordedAt": "2026-03-25T16:31:40.663Z"
+}

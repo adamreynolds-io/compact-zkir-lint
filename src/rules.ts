@@ -493,28 +493,46 @@ export type PerfRule = (
 ) => Finding[];
 
 /**
- * PERF-001: Circuit too large for WASM mobile proving.
- * k >= 16 means the circuit cannot be proved on a mobile device
- * within acceptable time limits (single-threaded WASM, limited memory).
+ * PERF-001: Circuit too large for WASM proving (hard limit).
+ *
+ * WASM provers (mobile and desktop browsers) have a hard limit of k=15.
+ * Circuits with k > 15 can only be proved by proof servers that have
+ * the SRS curve files for that k value. These files are large
+ * (k=16: ~500MB, k=20: ~8GB) and must be downloaded before proving.
+ * This check always runs, even without --profile.
  */
-export const wasmMobileLimit: PerfRule = (profile) => {
-  if (profile.k < 16) return [];
-  return [
-    {
-      severity: "error",
-      rule: "PERF-001",
-      instructionIndex: -1,
-      memoryVar: null,
-      message: `Circuit k=${profile.k} exceeds WASM mobile limit (k <= 15)`,
-      details:
-        `WASM in-browser proving is single-threaded and memory-constrained. ` +
-        `Circuits with k >= 16 (${2 ** profile.k} rows) are infeasible ` +
-        `on mobile devices. Consider reducing hash operations ` +
-        `(${profile.hashCount} hashes = ${profile.hashRows} rows) ` +
-        `or simplifying the circuit.`,
-    },
-  ];
+export const WASM_K_LIMIT = 15;
+
+// SRS curve file sizes from bls_midnight_2p{k} on disk.
+// Exact doubling per k: 2^k * 48 bytes (BLS12-381 G1 points).
+const SRS_SIZES: Record<number, string> = {
+  16: "12MB",
+  17: "24MB",
+  18: "48MB",
+  19: "96MB",
+  20: "192MB",
+  21: "384MB",
+  22: "768MB",
+  23: "1.5GB",
+  24: "3GB",
+  25: "6GB",
 };
+
+export function checkWasmKLimit(k: number): Finding | null {
+  if (k <= WASM_K_LIMIT) return null;
+  const srsSize = SRS_SIZES[k] ?? `>${SRS_SIZES[25] ?? "6GB"}`;
+  return {
+    severity: "warn",
+    rule: "PERF-001",
+    instructionIndex: -1,
+    memoryVar: null,
+    message: `Circuit k=${k} exceeds WASM prover limit (k <= ${WASM_K_LIMIT})`,
+    details:
+      `This circuit (${(2 ** k).toLocaleString()} rows) cannot be proved in-browser. ` +
+      `It requires a proof server with the k=${k} SRS curve file (${srsSize}). ` +
+      `Proof servers without this file will fail at proving time.`,
+  };
+}
 
 /**
  * PERF-002: Circuit too large for WASM desktop proving.
@@ -639,7 +657,6 @@ export const maxKExceeded: PerfRule = (profile) => {
 
 export const ALL_PERF_RULES: PerfRule[] = [
   maxKExceeded,
-  wasmMobileLimit,
   wasmDesktopLimit,
   gpuRequired,
   hashDominatedCircuit,
