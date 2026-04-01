@@ -4,8 +4,10 @@
   "description": "Find Compact circuit bugs before your users do. Detects JS/ZK divergence patterns where compact-runtime succeeds but proof validation fails.",
   "type": "module",
   "bin": {
+    "compact-zkir-lint": "dist/cli.js",
     "zkir-lint": "dist/cli.js"
   },
+  "homepage": "https://github.com/adamreynolds-io/compact-zkir-lint",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
@@ -44,21 +46,21 @@
     "node": ">=18"
   },
   "devDependencies": {
-    "@midnight-ntwrk/compact-js": "^2.5.0",
-    "@midnight-ntwrk/compact-runtime": "^0.15.0",
-    "@midnight-ntwrk/ledger": "^4.0.0",
-    "@midnight-ntwrk/ledger-v8": "^8.0.3",
-    "@midnight-ntwrk/midnight-js-contracts": "^4.0.2",
-    "@midnight-ntwrk/midnight-js-network-id": "^4.0.2",
-    "@midnight-ntwrk/midnight-js-types": "^4.0.2",
-    "@midnight-ntwrk/midnight-js-utils": "^4.0.2",
-    "@midnight-ntwrk/onchain-runtime": "^0.3.0",
-    "@midnight-ntwrk/platform-js": "^2.2.4",
-    "@midnight-ntwrk/wallet-sdk-address-format": "^3.1.0",
-    "@types/node": "^25.5.0",
-    "effect": "^3.21.0",
-    "tsx": "^4.21.0",
-    "typescript": "^6.0.2",
-    "vitest": "^4.1.1"
+    "@midnight-ntwrk/compact-js": "2.5.0",
+    "@midnight-ntwrk/compact-runtime": "0.15.0",
+    "@midnight-ntwrk/ledger": "4.0.0",
+    "@midnight-ntwrk/ledger-v8": "8.0.3",
+    "@midnight-ntwrk/midnight-js-contracts": "4.0.2",
+    "@midnight-ntwrk/midnight-js-network-id": "4.0.2",
+    "@midnight-ntwrk/midnight-js-types": "4.0.2",
+    "@midnight-ntwrk/midnight-js-utils": "4.0.2",
+    "@midnight-ntwrk/onchain-runtime": "0.3.0",
+    "@midnight-ntwrk/platform-js": "2.2.4",
+    "@midnight-ntwrk/wallet-sdk-address-format": "3.1.0",
+    "@types/node": "25.5.0",
+    "effect": "3.21.0",
+    "tsx": "4.21.0",
+    "typescript": "6.0.2",
+    "vitest": "4.1.1"
   }
 }
