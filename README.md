@@ -35,6 +35,25 @@ npx compact-zkir-lint -r contracts/src/artifacts/ --format sarif > results.sarif
 
 No dependencies on Midnight packages. Reads the `.zkir` JSON files that the compiler already produces. Works offline.
 
+## Benchmark your proof server
+
+Built-in timing estimates are rough. Measure real proving times on your hardware:
+
+```bash
+# Start a proof server
+docker run -d -p 6300:6300 \
+  -v $HOME/.cache/midnight/zk-params:/root/.cache/midnight/zk-params \
+  ghcr.io/midnight-ntwrk/proof-server:8.0.3
+
+# Generate fixtures and run benchmarks (first time: npm run benchmark:setup)
+npm run benchmark -- -o profile.json
+
+# Lint with real timing data
+npx compact-zkir-lint --profile --profile-config profile.json -r contracts/src/artifacts/
+```
+
+Measures k=10-16 directly against the proof server, extrapolates k=17-25 from the observed doubling rate. See the [circuit profiling guide](docs/guides/circuit-profiling.md) for output format, payload size limits, and configuration.
+
 ## What it finds
 
 In ZK circuits, both branches of an `if/else` execute unconditionally — only the result is selected via `cond_select`. Constraints inside dead branches fire on invalid intermediate values, causing proof failures that JS testing can't catch.
@@ -61,11 +80,12 @@ See the [full rules reference](docs/rules/README.md) for details, examples, and 
 ## Documentation
 
 - [Rules reference](docs/rules/README.md) — all 17 rules with examples and fix guidance
-- [Circuit profiling](docs/guides/circuit-profiling.md) — estimate proving time per environment
+- [Circuit profiling](docs/guides/circuit-profiling.md) — estimate proving time, benchmark your proof server, payload sizes
 - [Branchless patterns](docs/guides/branchless-patterns.md) — how to restructure code to avoid divergence
-- [CI integration](docs/guides/ci-integration.md) — SARIF output, GitHub Actions, exit codes
+- [CI integration](docs/guides/ci-integration.md) — SARIF output, GitHub Actions, exit codes, profiling in CI
 - [Differential testing](docs/guides/differential-testing.md) — JS vs ZKIR fuzz testing for deeper analysis
 - [Compatibility](docs/compatibility.md) — version tracking and ZKIR v3 roadmap
+- [Benchmark tool](bench/README.md) — fixture generation, binary format, SDK packages
 
 ## Acknowledgements
 
