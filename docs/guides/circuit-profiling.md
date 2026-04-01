@@ -50,12 +50,75 @@ Four built-in environments are provided:
 The built-in timing estimates are rough. For accurate data from your hardware, use the benchmark tool:
 
 ```bash
-npm run benchmark:setup    # requires Compact compiler
+# 1. Start a proof server with SRS curve files mounted
+docker run -d -p 6300:6300 \
+  -v $HOME/.cache/midnight/zk-params:/root/.cache/midnight/zk-params \
+  ghcr.io/midnight-ntwrk/proof-server:8.0.3
+
+# 2. Setup (first time only — requires Compact compiler)
+npm run benchmark:setup
+
+# 3. Run benchmarks and generate a profile config
 npm run benchmark -- -o profile.json
+
+# 4. Use the profile with the linter
 npx compact-zkir-lint --profile --profile-config profile.json circuit.zkir
 ```
 
-See [bench/README.md](../../bench/README.md) for details.
+### Benchmark output
+
+The benchmark prints a summary table showing circuit stats and measured proving times:
+
+```
+  k       rows  tblRows  hashes  instrs  payload    proving time  distribution
+  ----------------------------------------------------------------------------------------
+   10      719        0       0      15     15KB     0.17s [0.17s-0.18s]    ░░░░░░░░░░░░░░░░░░░░
+   11     1454        2       1      29    2.7MB     0.60s [0.60s-0.61s]    ██░░░░░░░░░░░░░░░░░░
+   12     2158        2       2      30    5.0MB     0.78s [0.78s-0.78s]    ██░░░░░░░░░░░░░░░░░░
+   ...
+   16    33134        2      46      74   73.0MB      7.7s [7.7s-7.7s]      ████████████████████
+
+  Extrapolated (doubling per k):
+   17     14.2s (SRS: 24MB)
+   18     26.3s (SRS: 48MB)
+   ...
+   25    31m47s (SRS: 6GB)
+```
+
+### Measured vs extrapolated values
+
+k=10-16 are directly measured against the proof server. k=17-25 are extrapolated from the observed doubling rate because payload size limits prevent direct measurement at higher k values.
+
+Each benchmark payload bundles the prover key, which doubles per k:
+
+| k  | Prover key | Payload size |
+|----|-----------|--------------|
+| 14 | 19MB      | 19MB         |
+| 15 | 37MB      | 37MB         |
+| 16 | 73MB      | 73MB         |
+| 17 | 146MB     | 146MB        |
+| 18 | 291MB     | 291MB        |
+
+Above k=16, payloads exceed the proof server's HTTP body limit (~100MB), so the benchmark extrapolates from the measured doubling rate instead.
+
+### Benchmark CLI options
+
+```
+npm run benchmark -- [options]
+
+Options:
+  --server-url, --server <url>   Proof server URL (default: http://localhost:6300)
+  -n, --iterations <n>           Iterations per fixture (default: 3)
+  --timeout <ms>                 Per-request timeout in ms (default: 600000)
+  --fixture-dir, --fixtures <p>  Directory with .bin fixtures (default: bench/fixtures)
+  --target-k <k,...>             Only benchmark specific k values
+  --label <name>                 Environment label (default: "benchmarked")
+  --warn-threshold <s>           Seconds threshold for warnK (default: 60)
+  -o, --output <path>            Write profile JSON to file
+  -f, --format env|full          env = profile config; full = detailed (default: env)
+```
+
+See [bench/README.md](../../bench/README.md) for fixture generation and format details.
 
 ## Setting a maximum k
 
@@ -121,7 +184,7 @@ Each environment has:
 
 ## SRS curve files
 
-Proof servers need SRS parameter files for each k value. These double per k:
+Proof servers need SRS parameter files (`bls_midnight_2p{k}`) for each k value. These double per k:
 
 | k | SRS file size |
 |---|--------------|
@@ -132,6 +195,14 @@ Proof servers need SRS parameter files for each k value. These double per k:
 | 20 | 192MB |
 | 22 | 768MB |
 | 25 | 6GB |
+
+SRS files are stored at `~/.cache/midnight/zk-params/`. Mount this directory when running a proof server in Docker to avoid re-downloading:
+
+```bash
+docker run -d -p 6300:6300 \
+  -v $HOME/.cache/midnight/zk-params:/root/.cache/midnight/zk-params \
+  ghcr.io/midnight-ntwrk/proof-server:8.0.3
+```
 
 ## Reducing circuit size
 

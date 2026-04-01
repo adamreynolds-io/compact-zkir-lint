@@ -52,6 +52,9 @@ jobs:
         run: npx compact-zkir-lint -r src/artifacts/ --format sarif > zkir-lint.sarif
         continue-on-error: true
 
+      - name: Enforce k budget
+        run: npx compact-zkir-lint --profile --max-k 14 -r src/artifacts/
+
       - name: Upload SARIF
         uses: github/codeql-action/upload-sarif@<sha>
         with:
@@ -68,11 +71,23 @@ npx compact-zkir-lint -r contracts/src/artifacts/ --format json
 
 The JSON output includes full finding details — rule, severity, instruction index, memory variable, message, and details.
 
+## Profiling in CI
+
+Use a pre-generated benchmark profile to enforce proving time budgets:
+
+```bash
+# Fail if any circuit exceeds k=14
+npx compact-zkir-lint --profile --profile-config profile.json --max-k 14 -r src/artifacts/
+```
+
+Generate `profile.json` once on your target hardware with `npm run benchmark -- -o profile.json`, then commit it to the repo. See the [circuit profiling guide](circuit-profiling.md) for benchmark setup and configuration.
+
 ## Recommended CI strategy
 
 1. **On every PR**: Run with `--severity error` to catch proof-breaking issues
-2. **Nightly**: Run with `--severity info` to track code quality trends
-3. **After compiler upgrades**: Run against all circuits and compare output to baseline
+2. **On every PR**: Run with `--profile --max-k <limit>` to catch circuit size regressions
+3. **Nightly**: Run with `--severity info` to track code quality trends
+4. **After compiler upgrades**: Run against all circuits and compare output to baseline
 
 ## Monorepo usage
 
