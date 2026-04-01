@@ -9,8 +9,3 @@ updates:
       midnight-sdk:
         patterns:
           - "@midnight-ntwrk/*"
-      dev-tools:
-        patterns:
-          - "typescript"
-          - "tsx"
-          - "esbuild"
