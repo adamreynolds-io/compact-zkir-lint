@@ -139,6 +139,127 @@ describe.skipIf(!hasCompact)("E2E: Compact source → compile → lint", () => {
       }
     });
   });
+
+  describe("divergence contracts (expected findings)", () => {
+    it("div-001: downcast in branch triggers DIV-001", async () => {
+      const zkirDir = compileCompact(
+        join(FIXTURES_DIR, "div-001-downcast-in-branch.compact"),
+      );
+      if (zkirDir === null) return;
+
+      const report = await analyzeFile(
+        join(zkirDir, "conditional_increment.zkir"),
+      );
+      const div001 = report.findings.filter((f) => f.rule === "DIV-001");
+      expect(div001.length).toBeGreaterThanOrEqual(1);
+      expect(div001[0]!.severity).toBe("error");
+    });
+
+    it("div-002: bytes-to-field in branch triggers DIV-002", async () => {
+      const zkirDir = compileCompact(
+        join(FIXTURES_DIR, "div-002-bytes-to-field-in-branch.compact"),
+      );
+      if (zkirDir === null) return;
+
+      const report = await analyzeFile(
+        join(zkirDir, "conditional_store.zkir"),
+      );
+      const div002 = report.findings.filter((f) => f.rule === "DIV-002");
+      expect(div002.length).toBeGreaterThanOrEqual(1);
+      expect(div002[0]!.severity).toBe("error");
+    });
+
+    it("div-003: field-to-bytes in branch triggers DIV-003", async () => {
+      const zkirDir = compileCompact(
+        join(FIXTURES_DIR, "div-003-field-to-bytes-in-branch.compact"),
+      );
+      if (zkirDir === null) return;
+
+      const report = await analyzeFile(
+        join(zkirDir, "conditional_extract.zkir"),
+      );
+      const div003 = report.findings.filter((f) => f.rule === "DIV-003");
+      expect(div003.length).toBeGreaterThanOrEqual(1);
+      expect(div003[0]!.severity).toBe("warn");
+    });
+
+    it("div-004: assert in branch is clean (compiler wraps with cond_select)", async () => {
+      const zkirDir = compileCompact(
+        join(FIXTURES_DIR, "div-004-assert-in-branch.compact"),
+      );
+      if (zkirDir === null) return;
+
+      const report = await analyzeFile(
+        join(zkirDir, "guarded_assert.zkir"),
+      );
+      const div004 = report.findings.filter((f) => f.rule === "DIV-004");
+      expect(div004).toHaveLength(0);
+    });
+
+    it("div-005: constrain_eq in branch triggers DIV-005", async () => {
+      const zkirDir = compileCompact(
+        join(FIXTURES_DIR, "div-005-constrain-eq-in-branch.compact"),
+      );
+      if (zkirDir === null) return;
+
+      const report = await analyzeFile(
+        join(zkirDir, "check_and_set.zkir"),
+      );
+      const div005 = report.findings.filter((f) => f.rule === "DIV-005");
+      expect(div005.length).toBeGreaterThanOrEqual(1);
+      expect(div005[0]!.severity).toBe("warn");
+    });
+
+    it("rt-001: persistent hash with guarded witness triggers RT-001", async () => {
+      const zkirDir = compileCompact(
+        join(FIXTURES_DIR, "rt-001-persistent-hash-guarded.compact"),
+      );
+      if (zkirDir === null) return;
+
+      const report = await analyzeFile(
+        join(zkirDir, "conditional_hash.zkir"),
+      );
+      const rt001 = report.findings.filter((f) => f.rule === "RT-001");
+      expect(rt001.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it("rt-002: less_than with guarded witness triggers RT-002", async () => {
+      const zkirDir = compileCompact(
+        join(FIXTURES_DIR, "rt-002-less-than-guarded.compact"),
+      );
+      if (zkirDir === null) return;
+
+      const report = await analyzeFile(
+        join(zkirDir, "nested_compare.zkir"),
+      );
+      const rt002 = report.findings.filter((f) => f.rule === "RT-002");
+      expect(rt002.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it("rt-003: transient hash with guarded witness triggers RT-003", async () => {
+      const zkirDir = compileCompact(
+        join(FIXTURES_DIR, "rt-003-transient-hash-guarded.compact"),
+      );
+      if (zkirDir === null) return;
+
+      const report = await analyzeFile(
+        join(zkirDir, "conditional_log.zkir"),
+      );
+      const rt003 = report.findings.filter((f) => f.rule === "RT-003");
+      expect(rt003.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it("rt-004: long arithmetic chain triggers RT-004", async () => {
+      const zkirDir = compileCompact(
+        join(FIXTURES_DIR, "rt-004-long-arithmetic-chain.compact"),
+      );
+      if (zkirDir === null) return;
+
+      const report = await analyzeFile(join(zkirDir, "accumulate.zkir"));
+      const rt004 = report.findings.filter((f) => f.rule === "RT-004");
+      expect(rt004.length).toBeGreaterThanOrEqual(1);
+    });
+  });
 });
 
 describe("E2E: real compiled circuits with known issues", () => {

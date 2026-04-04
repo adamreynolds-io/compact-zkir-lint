@@ -1,0 +1,33 @@
+pragma language_version >= 0.22.0;
+
+// DIV-003: Field-to-bytes conversion inside conditional branch.
+//
+// The compiler emits `div_mod_power_of_two` when a Counter/ledger value is
+// cast through Field → Bytes<N> inside a branch (e.g. `counter as Field as Bytes<32>`).
+// The instruction decomposes the field element into quotient and remainder;
+// on dead-branch values (the branch taken when flag=false, where `counter`
+// defaults to 0 in ZKIR) this may produce unexpected results.
+//
+// Note: a direct `Field` parameter cast via `as Bytes<N>` generates `constrain_bits`,
+// not `div_mod_power_of_two`. The compiler FIXME is triggered only when the field value
+// comes from a ledger/Counter read that is itself guarded (a `public_input { guard }` in ZKIR).
+//
+// Compiler FIXME: passes.ss:9350
+//   "zkir field->bytes #f needs to respect test"
+//
+// Expected finding: DIV-003 warning on the div_mod_power_of_two instruction.
+
+import CompactStandardLibrary;
+
+ledger stored: Bytes<32>;
+ledger counter: Counter;
+
+export circuit conditional_extract(flag: Boolean): [] {
+  if (disclose(flag)) {
+    // counter as Field as Bytes<32> triggers div_mod_power_of_two in ZKIR.
+    // The counter is read via a guarded `public_input { guard: flag }`, so
+    // div_mod_power_of_two operates on a guarded value.
+    stored = disclose(persistentHash<Vector<2, Bytes<32>>>([pad(32, "prefix:"), counter as Field as Bytes<32>]));
+  }
+  return [];
+}

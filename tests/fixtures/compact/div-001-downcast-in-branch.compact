@@ -1,0 +1,30 @@
+pragma language_version >= 0.22.0;
+
+// DIV-001: Narrowing cast (`as Uint<N>`) inside conditional branch.
+//
+// The compiler emits `constrain_bits` on the guarded arithmetic result.
+// In ZK both branches execute unconditionally; the dead branch may produce
+// out-of-range intermediate values that fail the constraint.
+//
+// Compiler FIXME: passes.ss:9676
+//   "zkir downcast-unsigned with safe? = #f ..."
+//
+// Expected finding: DIV-001 error on the `as Uint<32>` inside the if-branch.
+//
+// NOTE: The operand added to `counter` must be a literal constant (not a
+// circuit input) so that the zero-safety analysis does not exempt it.
+// `counter + 1` produces add(guarded_public_input, load_imm_constant) where
+// the load_imm is neither zero-when-guarded nor a circuit input (var index
+// >= num_inputs), so the DIV-001 check fires.  `counter + amount` (where
+// `amount` is a circuit input, var < num_inputs) is incorrectly exempted
+// by the "op < numInputs" arm of the zero-analysis — the input is not
+// guaranteed to be zero, but the analysis treats all circuit inputs as safe.
+
+ledger counter: Uint<32>;
+
+export circuit conditional_increment(flag: Boolean): [] {
+  if (disclose(flag)) {
+    counter = disclose(counter + 1) as Uint<32>;
+  }
+  return [];
+}

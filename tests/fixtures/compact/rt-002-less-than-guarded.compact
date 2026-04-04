@@ -1,0 +1,32 @@
+pragma language_version >= 0.22.0;
+
+// RT-002: Comparison with guarded operands that are not zero-when-guarded.
+//
+// ZKIR `less_than` extracts N bits from each operand before comparing.
+// If operands come from a guarded region and are not provably zero,
+// the linter flags this for awareness.
+//
+// This fixture also triggers DIV-001 for the constrain_bits on the
+// guarded arithmetic result (the +1 cast to Uint<32> inside the branch).
+// That compound pattern is realistic — a cast inside a branch generates
+// both an unconditional constraint and feeds a guarded value into less_than.
+//
+// Expected findings:
+//   - DIV-001 error on constrain_bits for guarded arithmetic results
+//   - RT-002 info on less_than with guarded operands
+
+ledger result: Boolean;
+
+witness get_a(): Uint<32>;
+witness get_b(): Uint<32>;
+
+export circuit nested_compare(outer: Boolean): [] {
+  if (disclose(outer)) {
+    // Witness values are read inside the branch (guarded private_input).
+    // Adding a constant makes them non-zero-when-guarded so RT-002 fires.
+    const a = disclose(get_a()) + 1 as Uint<32>;
+    const b = disclose(get_b()) + 1 as Uint<32>;
+    result = a < b;
+  }
+  return [];
+}

@@ -1,0 +1,29 @@
+pragma language_version >= 0.22.0;
+
+// DIV-004: Assert on branch-local value.
+//
+// An `assert` on a condition derived from guarded computation fires
+// unconditionally in ZK. When the branch is not taken, the dead
+// computation may produce a false condition, failing the assert.
+//
+// Expected finding: DIV-004 warning on the assert instruction.
+//
+// NOTE (compiler 0.30.0): The compiler correctly lowers `assert(cond)` inside
+// `if (flag)` by emitting `cond_select(bit=flag, a=cond, b=true)` before the
+// `assert`. The dead branch therefore always asserts `true`, so this pattern
+// is safe in 0.30.0 and the linter correctly reports clean. DIV-004 would
+// fire only if the compiler emitted `assert(cond)` without the cond_select
+// wrapper — e.g., if the condition variable came from a guarded private_input
+// op rather than being merged through cond_select first.
+
+ledger value: Uint<32>;
+
+export circuit guarded_assert(flag: Boolean, x: Uint<32>): [] {
+  if (disclose(flag)) {
+    // The compiler emits: cond_select(flag, less_than(0,x,32), true) → assert.
+    // The dead branch (flag=false) asserts the constant true — safe.
+    assert(disclose(x) > 0, "must be positive");
+    value = disclose(x);
+  }
+  return [];
+}

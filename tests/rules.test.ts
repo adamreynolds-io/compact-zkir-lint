@@ -18,6 +18,7 @@ import {
 import { makeZkir, runRule } from "./helpers.js";
 
 const FIXTURES = join(import.meta.dirname, "fixtures/real");
+const COMPILED = join(import.meta.dirname, "fixtures/compiled");
 
 describe("DIV-001: unconditionalConstrainBits", () => {
   it("flags constrain_bits on guarded arithmetic result", () => {
@@ -383,5 +384,139 @@ describe("STATS-002: constraintDensity", () => {
       ],
     }));
     expect(findings).toHaveLength(0);
+  });
+});
+
+// ── Compiled fixture tests ──
+// Each test loads ZKIR compiled from a real Compact contract (tests/fixtures/compact/)
+// by compact compile +0.30.0, verifying the linter detects the expected pattern
+// in actual compiler output.
+
+describe("compiled fixtures: DIV-001 (conditional_increment)", () => {
+  it("finds constrain_bits on guarded add in compiled circuit", () => {
+    const zkir = JSON.parse(readFileSync(
+      join(COMPILED, "div-001-downcast-in-branch--conditional_increment.zkir"),
+      "utf-8",
+    ));
+    const graph = buildIrGraph(zkir);
+    const findings = unconditionalConstrainBits(graph);
+    expect(findings.length).toBeGreaterThanOrEqual(1);
+    expect(findings[0]!.rule).toBe("DIV-001");
+    expect(findings[0]!.severity).toBe("error");
+    expect(findings[0]!.instructionIndex).toBe(27);
+    expect(findings[0]!.memoryVar).toBe(14);
+  });
+});
+
+describe("compiled fixtures: DIV-002 (conditional_store)", () => {
+  it("finds reconstitute_field with guarded operands in compiled circuit", () => {
+    const zkir = JSON.parse(readFileSync(
+      join(COMPILED, "div-002-bytes-to-field-in-branch--conditional_store.zkir"),
+      "utf-8",
+    ));
+    const graph = buildIrGraph(zkir);
+    const findings = unconditionalReconstituteField(graph);
+    expect(findings.length).toBeGreaterThanOrEqual(1);
+    expect(findings[0]!.rule).toBe("DIV-002");
+    expect(findings[0]!.severity).toBe("error");
+    expect(findings[0]!.instructionIndex).toBe(5);
+  });
+});
+
+describe("compiled fixtures: DIV-003 (conditional_extract)", () => {
+  it("finds div_mod_power_of_two on guarded value in compiled circuit", () => {
+    const zkir = JSON.parse(readFileSync(
+      join(COMPILED, "div-003-field-to-bytes-in-branch--conditional_extract.zkir"),
+      "utf-8",
+    ));
+    const graph = buildIrGraph(zkir);
+    const findings = unconditionalDivMod(graph);
+    expect(findings.length).toBeGreaterThanOrEqual(1);
+    expect(findings[0]!.rule).toBe("DIV-003");
+    expect(findings[0]!.severity).toBe("warn");
+    expect(findings[0]!.instructionIndex).toBe(25);
+  });
+});
+
+describe("compiled fixtures: DIV-004 (guarded_assert)", () => {
+  it("is clean — compiler 0.30.0 wraps assert with cond_select", () => {
+    const zkir = JSON.parse(readFileSync(
+      join(COMPILED, "div-004-assert-in-branch--guarded_assert.zkir"),
+      "utf-8",
+    ));
+    const graph = buildIrGraph(zkir);
+    const findings = unconditionalAssert(graph);
+    expect(findings).toHaveLength(0);
+  });
+});
+
+describe("compiled fixtures: DIV-005 (check_and_set)", () => {
+  it("finds constrain_eq with guarded operand in compiled circuit", () => {
+    const zkir = JSON.parse(readFileSync(
+      join(COMPILED, "div-005-constrain-eq-in-branch--check_and_set.zkir"),
+      "utf-8",
+    ));
+    const graph = buildIrGraph(zkir);
+    const findings = unconditionalConstrainEq(graph);
+    expect(findings.length).toBeGreaterThanOrEqual(1);
+    expect(findings[0]!.rule).toBe("DIV-005");
+    expect(findings[0]!.severity).toBe("warn");
+    expect(findings[0]!.instructionIndex).toBe(3);
+  });
+});
+
+describe("compiled fixtures: RT-001 (conditional_hash)", () => {
+  it("finds persistent_hash with guarded inputs in compiled circuit", () => {
+    const zkir = JSON.parse(readFileSync(
+      join(COMPILED, "rt-001-persistent-hash-guarded--conditional_hash.zkir"),
+      "utf-8",
+    ));
+    const graph = buildIrGraph(zkir);
+    const findings = persistentHashGuardedInputs(graph);
+    expect(findings.length).toBeGreaterThanOrEqual(1);
+    expect(findings[0]!.rule).toBe("RT-001");
+    expect(findings[0]!.instructionIndex).toBe(2);
+  });
+});
+
+describe("compiled fixtures: RT-002 (nested_compare)", () => {
+  it("finds less_than with guarded operands in compiled circuit", () => {
+    const zkir = JSON.parse(readFileSync(
+      join(COMPILED, "rt-002-less-than-guarded--nested_compare.zkir"),
+      "utf-8",
+    ));
+    const graph = buildIrGraph(zkir);
+    const findings = lessThanGuardedOperands(graph);
+    expect(findings.length).toBeGreaterThanOrEqual(1);
+    expect(findings[0]!.rule).toBe("RT-002");
+    expect(findings[0]!.instructionIndex).toBe(12);
+  });
+});
+
+describe("compiled fixtures: RT-003 (conditional_log)", () => {
+  it("finds transient_hash with guarded inputs in compiled circuit", () => {
+    const zkir = JSON.parse(readFileSync(
+      join(COMPILED, "rt-003-transient-hash-guarded--conditional_log.zkir"),
+      "utf-8",
+    ));
+    const graph = buildIrGraph(zkir);
+    const findings = transientHashGuardedInputs(graph);
+    expect(findings.length).toBeGreaterThanOrEqual(1);
+    expect(findings[0]!.rule).toBe("RT-003");
+    expect(findings[0]!.instructionIndex).toBe(2);
+  });
+});
+
+describe("compiled fixtures: RT-004 (accumulate)", () => {
+  it("finds long arithmetic chain in compiled circuit", () => {
+    const zkir = JSON.parse(readFileSync(
+      join(COMPILED, "rt-004-long-arithmetic-chain--accumulate.zkir"),
+      "utf-8",
+    ));
+    const graph = buildIrGraph(zkir);
+    const findings = longArithmeticChain(graph);
+    expect(findings.length).toBeGreaterThanOrEqual(1);
+    expect(findings[0]!.rule).toBe("RT-004");
+    expect(findings[0]!.instructionIndex).toBe(9);
   });
 });

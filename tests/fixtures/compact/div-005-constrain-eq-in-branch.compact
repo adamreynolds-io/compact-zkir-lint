@@ -1,0 +1,29 @@
+pragma language_version >= 0.22.0;
+
+// DIV-005: Equality constraint with guarded operand.
+//
+// `constrain_eq` fires unconditionally. If one operand is from a guarded
+// region (defaulting to 0 in the dead branch), the equality check fires
+// even when the branch was not taken.
+//
+// `constrain_eq` is emitted by the compiler to constrain a value of type
+// `Uint<0..1>` (upper bound not a power-of-two-minus-one) to be equal to
+// the literal 0. When the witness is read inside a conditional branch via
+// a `private_input` with guard, the operand is guarded and the constraint
+// fires unconditionally.
+//
+// Expected finding: DIV-005 warning on the constrain_eq instruction.
+
+ledger result: Boolean;
+
+witness get_count(): Uint<0..1>;
+
+export circuit check_and_set(flag: Boolean): [] {
+  if (disclose(flag)) {
+    // Witness read inside branch → private_input with guard in ZKIR.
+    // count is guarded; constrain_eq for the Uint<0..1> type fires unconditionally.
+    const count = disclose(get_count());
+    result = (count == 0);
+  }
+  return [];
+}

@@ -1,0 +1,25 @@
+pragma language_version >= 0.22.0;
+
+// RT-004: Long arithmetic chain without intermediate constraints.
+//
+// JS field arithmetic (addField, subField) assumes inputs are in
+// [0, FIELD_MODULUS) and uses single-reduction shortcuts (subtracts
+// modulus once). Long chains may accumulate values that escape this
+// range, causing JS/ZKIR divergence. ZKIR uses native Fr which handles
+// arbitrary-depth chains correctly.
+//
+// Expected finding: RT-004 info on constrain_bits after 8+ deep chain.
+// Requires 9 operands (8 add operations) to exceed the threshold of 8.
+
+ledger total: Uint<64>;
+
+export circuit accumulate(
+  a: Field, b: Field, c: Field, d: Field,
+  e: Field, f: Field, g: Field, h: Field,
+  i: Field
+): [] {
+  // 8-deep addition chain (9 operands → 8 adds) without intermediate constrain_bits.
+  // JS single-reduction may diverge from ZKIR native Fr.
+  total = disclose(a + b + c + d + e + f + g + h + i) as Uint<64>;
+  return [];
+}

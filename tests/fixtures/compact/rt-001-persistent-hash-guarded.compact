@@ -1,0 +1,28 @@
+pragma language_version >= 0.22.0;
+
+import CompactStandardLibrary;
+
+// RT-001: Persistent hash with guarded inputs.
+//
+// When persistentHash() is called with inputs that come from a witness
+// read inside a conditional branch, the inputs are "guarded" in ZKIR:
+// the private_input instruction has a non-null guard. ZKIR re-parses
+// field elements through alignment before hashing, while the JS runtime
+// hashes AlignedValue directly. If guarded inputs default to 0, the
+// alignment parsing may produce different binary than JS.
+//
+// Expected finding: RT-001 warning on persistent_hash instruction.
+
+ledger hash_store: Bytes<32>;
+
+witness get_value(): Field;
+
+export circuit conditional_hash(flag: Boolean): [] {
+  if (disclose(flag)) {
+    // Witness read inside branch → private_input with guard in ZKIR.
+    // This guarded value is fed into persistentHash, triggering RT-001.
+    const value = disclose(get_value());
+    hash_store = persistentHash<Field>(value);
+  }
+  return [];
+}

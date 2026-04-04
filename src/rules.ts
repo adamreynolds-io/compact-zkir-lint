@@ -20,6 +20,9 @@ export type Rule = (graph: IrGraph) => Finding[];
  * The #226 pattern: `as Uint<N>` inside a conditional branch generates a
  * constrain_bits that fires unconditionally in ZK. When the branch is not taken,
  * the dead computation may produce out-of-range values that fail the constraint.
+ *
+ * Example: tests/fixtures/compact/div-001-downcast-in-branch.compact
+ * Compiler FIXME: passes.ss:9676
  */
 export const unconditionalConstrainBits: Rule = (graph) => {
   const findings: Finding[] = [];
@@ -63,6 +66,8 @@ export const unconditionalConstrainBits: Rule = (graph) => {
  *
  * reconstitute_field emits internal constraints. If its operands are from a
  * guarded region, those constraints fire unconditionally.
+ *
+ * Example: tests/fixtures/compact/div-002-bytes-to-field-in-branch.compact
  * Compiler FIXME: passes.ss:9671 "zkir bytes->field needs to respect test"
  */
 export const unconditionalReconstituteField: Rule = (graph) => {
@@ -103,6 +108,8 @@ export const unconditionalReconstituteField: Rule = (graph) => {
  * div_mod_power_of_two internally decomposes a value into quotient and remainder
  * using bit extraction. If the input is from a guarded region, the bit extraction
  * may produce unexpected results on dead-branch values.
+ *
+ * Example: tests/fixtures/compact/div-003-field-to-bytes-in-branch.compact
  * Compiler FIXME: passes.ss:9350 "zkir field->bytes needs to respect test"
  */
 export const unconditionalDivMod: Rule = (graph) => {
@@ -140,6 +147,10 @@ export const unconditionalDivMod: Rule = (graph) => {
  * An assert on a value derived from guarded computation fires unconditionally.
  * If the dead branch produces a false condition, the assert fails even though
  * the branch is logically unreachable.
+ *
+ * Example: tests/fixtures/compact/div-004-assert-in-branch.compact
+ * Note: compiler 0.30.0 wraps assert with cond_select, so this is clean.
+ * The rule detects regressions if a future compiler drops the wrapper.
  */
 export const unconditionalAssert: Rule = (graph) => {
   const findings: Finding[] = [];
@@ -242,6 +253,8 @@ export const constraintDensity: Rule = (graph) => {
  *
  * Similar to constrain_bits, constrain_eq fires unconditionally. If operands
  * are from a guarded region, the equality check may fail on dead-branch values.
+ *
+ * Example: tests/fixtures/compact/div-005-constrain-eq-in-branch.compact
  */
 export const unconditionalConstrainEq: Rule = (graph) => {
   const findings: Finding[] = [];
@@ -282,6 +295,8 @@ export const unconditionalConstrainEq: Rule = (graph) => {
  * then converts to binary for hashing. If inputs are from guarded regions
  * (defaulting to 0), the alignment parsing may produce different binary
  * than what the JS runtime hashed (which used AlignedValue directly).
+ *
+ * Example: tests/fixtures/compact/rt-001-persistent-hash-guarded.compact
  */
 export const persistentHashGuardedInputs: Rule = (graph) => {
   const findings: Finding[] = [];
@@ -322,6 +337,8 @@ export const persistentHashGuardedInputs: Rule = (graph) => {
  * the bit extraction is safe (0 truncated is 0). But if operands mix
  * guarded and unguarded values in arithmetic before the comparison,
  * the truncation may produce unexpected results in dead branches.
+ *
+ * Example: tests/fixtures/compact/rt-002-less-than-guarded.compact
  */
 export const lessThanGuardedOperands: Rule = (graph) => {
   const findings: Finding[] = [];
@@ -372,6 +389,8 @@ export const lessThanGuardedOperands: Rule = (graph) => {
  * type.toValue() which may truncate trailing zeros (CompactTypeBytes),
  * while ZKIR receives raw field elements. If guarded inputs produce
  * different field values than what JS serialized, the hash diverges.
+ *
+ * Example: tests/fixtures/compact/rt-003-transient-hash-guarded.compact
  */
 export const transientHashGuardedInputs: Rule = (graph) => {
   const findings: Finding[] = [];
@@ -414,6 +433,8 @@ export const transientHashGuardedInputs: Rule = (graph) => {
  *
  * Detects: long chains of add/mul without intervening constrain_bits
  * (which force normalization via bit extraction).
+ *
+ * Example: tests/fixtures/compact/rt-004-long-arithmetic-chain.compact
  */
 export const longArithmeticChain: Rule = (graph) => {
   const findings: Finding[] = [];

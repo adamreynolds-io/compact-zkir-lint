@@ -1,0 +1,32 @@
+pragma language_version >= 0.22.0;
+
+// DIV-002: Bytes-to-field conversion inside conditional branch.
+//
+// The compiler emits `reconstitute_field` with guarded operands.
+// reconstitute_field has internal constraints that fire unconditionally.
+//
+// Compiler FIXME: passes.ss:9671
+//   "zkir bytes->field needs to respect test"
+//
+// Expected finding: DIV-002 error on the reconstitute_field instruction.
+//
+// NOTE: The data must come from a witness (not a circuit parameter) so the
+// compiler emits guarded `private_input` instructions. Circuit parameters are
+// allocated as unguarded top-level inputs and the compiler hoists
+// reconstitute_field before any cond_select, so varGuard never sees them.
+
+ledger stored: Field;
+
+witness getBytes(): Bytes<32>;
+
+export circuit conditional_store(flag: Boolean): [] {
+  if (disclose(flag)) {
+    // Bytes-to-field conversion on a witness value inside a guarded region.
+    // The compiler emits private_input{guard=0} for the witness, then
+    // reconstitute_field immediately — before any cond_select — so the
+    // constraints fire unconditionally even when flag=false.
+    const data: Bytes<32> = getBytes();
+    stored = disclose(data) as Field;
+  }
+  return [];
+}

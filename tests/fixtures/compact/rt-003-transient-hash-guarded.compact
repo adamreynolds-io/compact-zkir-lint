@@ -1,0 +1,28 @@
+pragma language_version >= 0.22.0;
+
+import CompactStandardLibrary;
+
+// RT-003: Transient hash with guarded inputs.
+//
+// When transientHash() is called with inputs that come from a witness
+// read inside a conditional branch, the inputs are "guarded" in ZKIR.
+// JS runtime calls type.toValue() which may truncate trailing zeros
+// (CompactTypeBytes.toValue strips trailing 0x00 bytes). ZKIR receives
+// raw field elements. If guarded inputs default to 0, the hash inputs
+// may differ between JS and ZKIR.
+//
+// Expected finding: RT-003 info on transient_hash instruction.
+
+ledger log_hash: Field;
+
+witness get_data(): Field;
+
+export circuit conditional_log(flag: Boolean): [] {
+  if (disclose(flag)) {
+    // Witness read inside branch → private_input with guard in ZKIR.
+    // This guarded value feeds into transientHash, triggering RT-003.
+    const data = disclose(get_data());
+    log_hash = disclose(transientHash<Field>(data));
+  }
+  return [];
+}
